@@ -1592,6 +1592,375 @@ a {
 
 
 /* ===================================================================
+   EXPLORE DASHBOARD — Premium Analytics Map Layout
+   =================================================================== */
+
+/* 2-Column Layout */
+.explore-dashboard {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: 20px;
+    align-items: stretch;
+    min-height: calc(100vh - 140px);
+}
+
+/* Panel shared styles */
+.explore-map-panel,
+.explore-chart-panel {
+    background: rgba(10, 14, 30, 0.65);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(100, 140, 220, 0.1);
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.explore-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 22px;
+    border-bottom: 1px solid rgba(100, 140, 220, 0.08);
+    flex-shrink: 0;
+}
+
+.explore-panel-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'Outfit', 'Inter', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.2px;
+}
+
+.explore-panel-title span {
+    font-size: 18px;
+}
+
+.explore-panel-badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 20px;
+    background: rgba(52, 211, 153, 0.1);
+    color: var(--accent-green);
+    border: 1px solid rgba(52, 211, 153, 0.15);
+    letter-spacing: 0.3px;
+}
+
+/* ---- Map Panel ---- */
+.dash-map-wrap {
+    position: relative;
+    flex: 1;
+    overflow: hidden;
+}
+
+.dash-map-img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: brightness(0.45) saturate(0.6) contrast(1.2);
+    user-select: none;
+    -webkit-user-drag: none;
+    transition: filter 0.4s ease;
+}
+
+.dash-map-wrap:hover .dash-map-img {
+    filter: brightness(0.5) saturate(0.65) contrast(1.2);
+}
+
+/* ---- Country Markers with Vertical Bars ---- */
+.map-marker {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    z-index: 10;
+    transform: translateX(-50%);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.map-marker:hover,
+.map-marker.active {
+    z-index: 15;
+}
+
+/* Vertical Bar */
+.marker-bar {
+    width: 3px;
+    background: linear-gradient(to top, var(--accent-green), rgba(52, 211, 153, 0.2));
+    border-radius: 2px;
+    transition: all 0.3s ease;
+    opacity: 0.7;
+    transform-origin: bottom center;
+}
+
+.map-marker:hover .marker-bar,
+.map-marker.active .marker-bar {
+    opacity: 1;
+    width: 4px;
+    box-shadow: 0 0 8px rgba(52, 211, 153, 0.4);
+}
+
+/* Dot at bottom of bar */
+.marker-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--accent-green);
+    box-shadow: 0 0 6px rgba(52, 211, 153, 0.5);
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.marker-dot::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(52, 211, 153, 0.3);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.map-marker:hover .marker-dot,
+.map-marker.active .marker-dot {
+    width: 10px;
+    height: 10px;
+    box-shadow: 0 0 14px rgba(52, 211, 153, 0.7);
+}
+
+.map-marker:hover .marker-dot::after,
+.map-marker.active .marker-dot::after {
+    opacity: 1;
+}
+
+/* Label below dot */
+.marker-label {
+    margin-top: 4px;
+    font-size: 9.5px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.5);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    white-space: nowrap;
+    transition: all 0.3s ease;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.6);
+}
+
+.map-marker:hover .marker-label,
+.map-marker.active .marker-label {
+    color: var(--accent-green);
+    text-shadow: 0 0 8px rgba(52, 211, 153, 0.3);
+}
+
+/* ---- Analytics Popup Card (inside map, center-right) ---- */
+.dash-analytics-card {
+    position: absolute;
+    right: 16px;
+    top: 16px;
+    z-index: 30;
+    width: 260px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(8px) scale(0.96);
+    transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+    pointer-events: none;
+}
+
+.dash-analytics-card.visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+}
+
+.dash-analytics-inner {
+    background: rgba(6, 10, 24, 0.88);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(52, 211, 153, 0.18);
+    border-radius: 14px;
+    padding: 20px;
+    box-shadow:
+        0 12px 40px rgba(0, 0, 0, 0.5),
+        0 0 24px rgba(52, 211, 153, 0.05);
+}
+
+/* Card Header */
+.dash-card-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid rgba(100, 140, 220, 0.08);
+}
+
+.dash-card-flag {
+    font-size: 28px;
+    line-height: 1;
+}
+
+.dash-card-title-group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.dash-card-country {
+    font-family: 'Outfit', 'Inter', sans-serif;
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--text-primary);
+    letter-spacing: -0.5px;
+}
+
+.dash-card-sub {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+.dash-card-close {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: rgba(255,255,255, 0.06);
+    border-radius: 8px;
+    color: var(--text-muted);
+    font-size: 18px;
+    cursor: pointer;
+    transition: var(--transition);
+    line-height: 1;
+}
+
+.dash-card-close:hover {
+    background: rgba(255,255,255, 0.12);
+    color: var(--text-primary);
+}
+
+/* Card Stats */
+.dash-card-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.dash-card-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.dash-card-stat.full {
+    grid-column: 1 / -1;
+}
+
+.dash-card-stat-val {
+    font-family: 'Outfit', 'Inter', sans-serif;
+    font-size: 19px;
+    font-weight: 800;
+    letter-spacing: -0.3px;
+}
+
+.dash-card-stat-val.green { color: var(--accent-green); }
+.dash-card-stat-val.blue { color: var(--accent-blue); }
+.dash-card-stat-val.purple { color: var(--accent-purple); }
+
+.dash-card-stat-lbl {
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+}
+
+/* Empty state */
+.dash-analytics-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 0;
+    color: var(--text-muted);
+    font-size: 12.5px;
+    font-weight: 500;
+}
+
+.dash-analytics-empty-icon {
+    font-size: 22px;
+    opacity: 0.7;
+}
+
+/* Loading */
+.dash-analytics-loading {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 0;
+    color: var(--text-muted);
+    font-size: 12.5px;
+}
+
+/* ---- Chart Panel ---- */
+.explore-chart-wrap {
+    flex: 1;
+    padding: 18px 22px 22px;
+    position: relative;
+    min-height: 300px;
+}
+
+/* ---- Responsive: Stack on mobile ---- */
+@media (max-width: 1024px) {
+    .explore-dashboard {
+        grid-template-columns: 1fr;
+        min-height: auto;
+    }
+    .explore-map-panel {
+        min-height: 400px;
+    }
+    .explore-chart-wrap {
+        min-height: 300px;
+    }
+}
+
+@media (max-width: 640px) {
+    .explore-panel-header {
+        padding: 14px 16px;
+    }
+    .dash-analytics-card {
+        width: 220px;
+        right: 10px;
+        top: 10px;
+    }
+    .dash-analytics-inner {
+        padding: 16px;
+    }
+    .dash-card-stat-val {
+        font-size: 16px;
+    }
+    .marker-label {
+        font-size: 8px;
+    }
+}
+
+
+/* ===================================================================
    BACKWARD COMPAT: Hide old sidebar / header elements
    =================================================================== */
 .sidebar { display: none; }

@@ -1,47 +1,119 @@
 {% extends "base.html" %}
 
-{% block title %}Funding Trends — Startup Intelligence{% endblock %}
-{% block page_title %}Funding Trends{% endblock %}
+{% block title %}Explore — Startup Intelligence{% endblock %}
+{% block page_title %}Explore{% endblock %}
 
 {% block content %}
 
-<!-- ===== FILTERS ===== -->
-<div class="filters-bar">
-    <div class="filter-group">
-        <span class="filter-label">Country</span>
-        <select class="filter-select" id="trendCountryFilter">
-            <option value="all">All Countries</option>
-            {% for c in countries %}
-            <option value="{{ c }}">{{ c }}</option>
-            {% endfor %}
-        </select>
-    </div>
-</div>
+<!-- ===== EXPLORE DASHBOARD: 2-Column Layout ===== -->
+<div class="explore-dashboard" id="exploreDashboard">
 
-<!-- ===== TREND CHART ===== -->
-<div class="charts-grid">
-    <div class="chart-card full-width animate-in">
-        <div class="chart-card-header">
-            <div class="chart-card-title"><span>📈</span> Year-wise Funding Trend</div>
+    <!-- LEFT: Analytics Map Panel -->
+    <div class="explore-map-panel">
+        <div class="explore-panel-header">
+            <div class="explore-panel-title">
+                <span>🌍</span> Global Funding Map
+            </div>
+            <span class="explore-panel-badge">8 Countries</span>
         </div>
-        <div class="chart-container" style="max-height: 450px;">
+
+        <!-- Dark styled map with data markers -->
+        <div class="dash-map-wrap" id="dashMapWrap">
+            <img src="{{ url_for('static', filename='world_map.png') }}"
+                 alt="World Map"
+                 class="dash-map-img"
+                 draggable="false" />
+
+            <!-- Country Markers with vertical bars -->
+            <div class="map-marker" data-country="USA" style="left: 20%; top: 32%;">
+                <div class="marker-bar" style="height: 48px;"></div>
+                <div class="marker-dot"></div>
+                <span class="marker-label">USA</span>
+            </div>
+            <div class="map-marker" data-country="Canada" style="left: 20%; top: 18%;">
+                <div class="marker-bar" style="height: 38px;"></div>
+                <div class="marker-dot"></div>
+                <span class="marker-label">Canada</span>
+            </div>
+            <div class="map-marker" data-country="UK" style="left: 45.5%; top: 22%;">
+                <div class="marker-bar" style="height: 34px;"></div>
+                <div class="marker-dot"></div>
+                <span class="marker-label">UK</span>
+            </div>
+            <div class="map-marker" data-country="France" style="left: 46.5%; top: 30%;">
+                <div class="marker-bar" style="height: 32px;"></div>
+                <div class="marker-dot"></div>
+                <span class="marker-label">France</span>
+            </div>
+            <div class="map-marker" data-country="Germany" style="left: 49.5%; top: 24%;">
+                <div class="marker-bar" style="height: 35px;"></div>
+                <div class="marker-dot"></div>
+                <span class="marker-label">Germany</span>
+            </div>
+            <div class="map-marker" data-country="Netherlands" style="left: 48%; top: 20%;">
+                <div class="marker-bar" style="height: 28px;"></div>
+                <div class="marker-dot"></div>
+                <span class="marker-label">NL</span>
+            </div>
+            <div class="map-marker" data-country="India" style="left: 67%; top: 42%;">
+                <div class="marker-bar" style="height: 42px;"></div>
+                <div class="marker-dot"></div>
+                <span class="marker-label">India</span>
+            </div>
+            <div class="map-marker" data-country="Australia" style="left: 82%; top: 72%;">
+                <div class="marker-bar" style="height: 30px;"></div>
+                <div class="marker-dot"></div>
+                <span class="marker-label">Australia</span>
+            </div>
+
+            <!-- Analytics Popup Card (appears on click) -->
+            <div class="dash-analytics-card" id="dashAnalyticsCard">
+                <div class="dash-analytics-inner" id="dashAnalyticsInner">
+                    <div class="dash-analytics-empty">
+                        <span class="dash-analytics-empty-icon">👆</span>
+                        <span>Click a country marker</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- RIGHT: Trend Chart Panel -->
+    <div class="explore-chart-panel">
+        <div class="explore-panel-header">
+            <div class="explore-panel-title">
+                <span>📈</span> Funding Trends
+            </div>
+            <div class="filter-group" style="margin: 0;">
+                <select class="filter-select" id="trendCountryFilter" style="min-width: 130px;">
+                    <option value="all">All Countries</option>
+                    {% for c in countries %}
+                    <option value="{{ c }}">{{ c }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="explore-chart-wrap">
             <canvas id="trendChart"></canvas>
         </div>
     </div>
+
 </div>
 
 {% endblock %}
 
 {% block scripts %}
 <script>
+// ===== TREND CHART (preserved) =====
 (function() {
     const ctx = document.getElementById('trendChart').getContext('2d');
     let trendChart = null;
 
     function buildChart(years, funding) {
-        const gradient = ctx.createLinearGradient(0, 0, 0, 420);
-        gradient.addColorStop(0, 'rgba(56, 189, 248, 0.25)');
-        gradient.addColorStop(1, 'rgba(56, 189, 248, 0.0)');
+        const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+        gradient.addColorStop(0, 'rgba(52, 211, 153, 0.22)');
+        gradient.addColorStop(1, 'rgba(52, 211, 153, 0.0)');
 
         if (trendChart) trendChart.destroy();
 
@@ -52,33 +124,145 @@
                 datasets: [{
                     label: 'Total Funding (USD)',
                     data: funding,
-                    borderColor: '#38bdf8',
+                    borderColor: '#34d399',
                     backgroundColor: gradient,
                     borderWidth: 2.5,
                     tension: 0.4,
                     fill: true,
-                    pointBackgroundColor: '#38bdf8',
+                    pointBackgroundColor: '#34d399',
                     pointBorderColor: '#0a0e1a',
                     pointBorderWidth: 2,
-                    pointRadius: 5,
-                    pointHoverRadius: 8,
+                    pointRadius: 4,
+                    pointHoverRadius: 7,
                 }]
             },
             options: getDarkChartOptions('Funding by Year')
         });
     }
 
-    // Initial chart with server data
+    // Initial chart
     buildChart({{ years | tojson }}, {{ funding | tojson }});
 
-    // Filter: Country
+    // Filter
     document.getElementById('trendCountryFilter').addEventListener('change', function() {
-        const country = this.value;
-        fetch('/api/trends?country=' + encodeURIComponent(country))
-            .then(r => r.json())
-            .then(data => {
-                buildChart(data.years, data.funding);
+        fetch('/api/trends?country=' + encodeURIComponent(this.value))
+            .then(function(r) { return r.json(); })
+            .then(function(data) { buildChart(data.years, data.funding); });
+    });
+
+    // Expose buildChart for map interaction
+    window._trendBuildChart = buildChart;
+})();
+
+
+// ===== ANALYTICS MAP INTERACTION (No zoom — static map) =====
+(function() {
+    var markers = document.querySelectorAll('.map-marker');
+    var card = document.getElementById('dashAnalyticsCard');
+    var inner = document.getElementById('dashAnalyticsInner');
+    var filterSelect = document.getElementById('trendCountryFilter');
+
+    if (!markers.length || !card || !inner) return;
+
+    var flags = {
+        'USA': '🇺🇸', 'India': '🇮🇳', 'UK': '🇬🇧', 'Germany': '🇩🇪',
+        'France': '🇫🇷', 'Canada': '🇨🇦', 'Australia': '🇦🇺', 'Netherlands': '🇳🇱'
+    };
+
+    var activeMarker = null;
+
+    function selectCountry(country, markerEl) {
+        // Remove previous active
+        markers.forEach(function(m) { m.classList.remove('active'); });
+        markerEl.classList.add('active');
+        activeMarker = markerEl;
+
+        // Show card with loading
+        card.classList.add('visible');
+        inner.innerHTML =
+            '<div class="dash-analytics-loading">' +
+                '<div class="country-spinner"></div>' +
+                '<span>Loading...</span>' +
+            '</div>';
+
+        // Fetch data
+        fetch('/api/country-analytics?name=' + encodeURIComponent(country))
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+                if (data.error) {
+                    inner.innerHTML = '<div class="dash-analytics-loading"><span>⚠️ ' + data.error + '</span></div>';
+                    return;
+                }
+
+                var flag = flags[data.country] || '🌍';
+                var totalB = (data.total_funding / 1e9).toFixed(2);
+                var avgM = (data.avg_funding / 1e6).toFixed(2);
+
+                inner.innerHTML =
+                    '<div class="dash-card-header">' +
+                        '<span class="dash-card-flag">' + flag + '</span>' +
+                        '<div class="dash-card-title-group">' +
+                            '<span class="dash-card-country">' + data.country + '</span>' +
+                            '<span class="dash-card-sub">' + data.num_startups + ' startups</span>' +
+                        '</div>' +
+                        '<button class="dash-card-close" id="dashCardClose" title="Close">&times;</button>' +
+                    '</div>' +
+                    '<div class="dash-card-stats">' +
+                        '<div class="dash-card-stat">' +
+                            '<span class="dash-card-stat-val green">$' + totalB + 'B</span>' +
+                            '<span class="dash-card-stat-lbl">Total Funding</span>' +
+                        '</div>' +
+                        '<div class="dash-card-stat">' +
+                            '<span class="dash-card-stat-val blue">$' + avgM + 'M</span>' +
+                            '<span class="dash-card-stat-lbl">Avg Funding</span>' +
+                        '</div>' +
+                        '<div class="dash-card-stat full">' +
+                            '<span class="dash-card-stat-val purple">' + data.top_sector + '</span>' +
+                            '<span class="dash-card-stat-lbl">Top Sector</span>' +
+                        '</div>' +
+                    '</div>';
+
+                // Close button
+                document.getElementById('dashCardClose').addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    closeCard();
+                });
+
+                // Sync trend chart filter
+                if (filterSelect) {
+                    filterSelect.value = data.country;
+                    filterSelect.dispatchEvent(new Event('change'));
+                }
+            })
+            .catch(function() {
+                inner.innerHTML = '<div class="dash-analytics-loading"><span>⚠️ Failed to load</span></div>';
             });
+    }
+
+    function closeCard() {
+        card.classList.remove('visible');
+        markers.forEach(function(m) { m.classList.remove('active'); });
+        activeMarker = null;
+        if (filterSelect) {
+            filterSelect.value = 'all';
+            filterSelect.dispatchEvent(new Event('change'));
+        }
+    }
+
+    // Attach click events
+    markers.forEach(function(marker) {
+        marker.addEventListener('click', function(e) {
+            e.stopPropagation();
+            var country = this.getAttribute('data-country');
+            if (country) selectCountry(country, this);
+        });
+    });
+
+    // Click outside card to close
+    document.getElementById('dashMapWrap').addEventListener('click', function(e) {
+        if (e.target.classList.contains('dash-map-img') && activeMarker) {
+            closeCard();
+        }
     });
 })();
 </script>
