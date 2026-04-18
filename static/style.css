@@ -1595,13 +1595,12 @@ a {
    EXPLORE DASHBOARD — Premium Analytics Map Layout
    =================================================================== */
 
-/* 2-Column Layout */
+/* Stacked Layout: Map top, Chart bottom */
 .explore-dashboard {
-    display: grid;
-    grid-template-columns: 1.5fr 1fr;
-    gap: 20px;
-    align-items: stretch;
-    min-height: calc(100vh - 140px);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    height: calc(100vh - 120px);
 }
 
 /* Panel shared styles */
@@ -1621,7 +1620,7 @@ a {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 18px 22px;
+    padding: 10px 18px;
     border-bottom: 1px solid rgba(100, 140, 220, 0.08);
     flex-shrink: 0;
 }
@@ -1652,10 +1651,14 @@ a {
     letter-spacing: 0.3px;
 }
 
-/* ---- Map Panel ---- */
+/* ---- Map Panel — compact height ---- */
+.explore-map-panel {
+    flex-shrink: 0;
+}
+
 .dash-map-wrap {
     position: relative;
-    flex: 1;
+    height: 300px;
     overflow: hidden;
 }
 
@@ -1664,6 +1667,7 @@ a {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    border-radius: 0 0 16px 16px;
     filter: brightness(0.45) saturate(0.6) contrast(1.2);
     user-select: none;
     -webkit-user-drag: none;
@@ -1689,6 +1693,7 @@ a {
 .map-marker:hover,
 .map-marker.active {
     z-index: 15;
+    transform: translateX(-50%) scale(1.1);
 }
 
 /* Vertical Bar */
@@ -1917,45 +1922,46 @@ a {
     font-size: 12.5px;
 }
 
-/* ---- Chart Panel ---- */
+/* ---- Chart Panel — compact to fit one screen ---- */
+.explore-chart-panel {
+    flex: 1;
+    min-height: 0;
+}
+
 .explore-chart-wrap {
     flex: 1;
-    padding: 18px 22px 22px;
+    padding: 10px 18px 14px;
     position: relative;
-    min-height: 300px;
+    min-height: 180px;
 }
 
-/* ---- Responsive: Stack on mobile ---- */
-@media (max-width: 1024px) {
+/* ---- Responsive ---- */
+@media (max-width: 768px) {
     .explore-dashboard {
-        grid-template-columns: 1fr;
-        min-height: auto;
+        max-height: none;
     }
-    .explore-map-panel {
-        min-height: 400px;
-    }
-    .explore-chart-wrap {
-        min-height: 300px;
-    }
-}
-
-@media (max-width: 640px) {
-    .explore-panel-header {
-        padding: 14px 16px;
+    .dash-map-wrap {
+        height: 280px;
     }
     .dash-analytics-card {
-        width: 220px;
+        width: 210px;
         right: 10px;
         top: 10px;
     }
     .dash-analytics-inner {
-        padding: 16px;
+        padding: 14px;
     }
     .dash-card-stat-val {
-        font-size: 16px;
+        font-size: 15px;
     }
     .marker-label {
         font-size: 8px;
+    }
+    .marker-bar {
+        display: none;
+    }
+    .explore-panel-header {
+        padding: 12px 14px;
     }
 }
 

@@ -5,10 +5,10 @@
 
 {% block content %}
 
-<!-- ===== EXPLORE DASHBOARD: 2-Column Layout ===== -->
+<!-- ===== EXPLORE: Stacked Layout (Map top, Chart bottom) ===== -->
 <div class="explore-dashboard" id="exploreDashboard">
 
-    <!-- LEFT: Analytics Map Panel -->
+    <!-- TOP: Analytics Map Panel -->
     <div class="explore-map-panel">
         <div class="explore-panel-header">
             <div class="explore-panel-title">
@@ -17,56 +17,55 @@
             <span class="explore-panel-badge">8 Countries</span>
         </div>
 
-        <!-- Dark styled map with data markers -->
         <div class="dash-map-wrap" id="dashMapWrap">
             <img src="{{ url_for('static', filename='world_map.png') }}"
                  alt="World Map"
                  class="dash-map-img"
                  draggable="false" />
 
-            <!-- Country Markers with vertical bars -->
-            <div class="map-marker" data-country="USA" style="left: 20%; top: 32%;">
-                <div class="marker-bar" style="height: 48px;"></div>
+            <!-- Country Markers — ACCURATE positions -->
+            <div class="map-marker" data-country="USA" style="left: 20%; top: 45%;">
+                <div class="marker-bar" style="height: 38px;"></div>
                 <div class="marker-dot"></div>
                 <span class="marker-label">USA</span>
             </div>
-            <div class="map-marker" data-country="Canada" style="left: 20%; top: 18%;">
-                <div class="marker-bar" style="height: 38px;"></div>
+            <div class="map-marker" data-country="Canada" style="left: 22%; top: 30%;">
+                <div class="marker-bar" style="height: 30px;"></div>
                 <div class="marker-dot"></div>
                 <span class="marker-label">Canada</span>
             </div>
-            <div class="map-marker" data-country="UK" style="left: 45.5%; top: 22%;">
-                <div class="marker-bar" style="height: 34px;"></div>
+            <div class="map-marker" data-country="UK" style="left: 48%; top: 38%;">
+                <div class="marker-bar" style="height: 28px;"></div>
                 <div class="marker-dot"></div>
                 <span class="marker-label">UK</span>
             </div>
-            <div class="map-marker" data-country="France" style="left: 46.5%; top: 30%;">
-                <div class="marker-bar" style="height: 32px;"></div>
+            <div class="map-marker" data-country="France" style="left: 48%; top: 45%;">
+                <div class="marker-bar" style="height: 26px;"></div>
                 <div class="marker-dot"></div>
                 <span class="marker-label">France</span>
             </div>
-            <div class="map-marker" data-country="Germany" style="left: 49.5%; top: 24%;">
-                <div class="marker-bar" style="height: 35px;"></div>
+            <div class="map-marker" data-country="Germany" style="left: 50%; top: 42%;">
+                <div class="marker-bar" style="height: 28px;"></div>
                 <div class="marker-dot"></div>
                 <span class="marker-label">Germany</span>
             </div>
-            <div class="map-marker" data-country="Netherlands" style="left: 48%; top: 20%;">
-                <div class="marker-bar" style="height: 28px;"></div>
+            <div class="map-marker" data-country="Netherlands" style="left: 50%; top: 37%;">
+                <div class="marker-bar" style="height: 22px;"></div>
                 <div class="marker-dot"></div>
                 <span class="marker-label">NL</span>
             </div>
-            <div class="map-marker" data-country="India" style="left: 67%; top: 42%;">
-                <div class="marker-bar" style="height: 42px;"></div>
+            <div class="map-marker" data-country="India" style="left: 68%; top: 55%;">
+                <div class="marker-bar" style="height: 34px;"></div>
                 <div class="marker-dot"></div>
                 <span class="marker-label">India</span>
             </div>
-            <div class="map-marker" data-country="Australia" style="left: 82%; top: 72%;">
-                <div class="marker-bar" style="height: 30px;"></div>
+            <div class="map-marker" data-country="Australia" style="left: 82%; top: 75%;">
+                <div class="marker-bar" style="height: 24px;"></div>
                 <div class="marker-dot"></div>
                 <span class="marker-label">Australia</span>
             </div>
 
-            <!-- Analytics Popup Card (appears on click) -->
+            <!-- Analytics Popup Card -->
             <div class="dash-analytics-card" id="dashAnalyticsCard">
                 <div class="dash-analytics-inner" id="dashAnalyticsInner">
                     <div class="dash-analytics-empty">
@@ -78,7 +77,7 @@
         </div>
     </div>
 
-    <!-- RIGHT: Trend Chart Panel -->
+    <!-- BOTTOM: Trend Chart Panel -->
     <div class="explore-chart-panel">
         <div class="explore-panel-header">
             <div class="explore-panel-title">
@@ -172,12 +171,10 @@
     var activeMarker = null;
 
     function selectCountry(country, markerEl) {
-        // Remove previous active
         markers.forEach(function(m) { m.classList.remove('active'); });
         markerEl.classList.add('active');
         activeMarker = markerEl;
 
-        // Show card with loading
         card.classList.add('visible');
         inner.innerHTML =
             '<div class="dash-analytics-loading">' +
@@ -185,7 +182,6 @@
                 '<span>Loading...</span>' +
             '</div>';
 
-        // Fetch data
         fetch('/api/country-analytics?name=' + encodeURIComponent(country))
             .then(function(res) { return res.json(); })
             .then(function(data) {
@@ -222,13 +218,11 @@
                         '</div>' +
                     '</div>';
 
-                // Close button
                 document.getElementById('dashCardClose').addEventListener('click', function(e) {
                     e.stopPropagation();
                     closeCard();
                 });
 
-                // Sync trend chart filter
                 if (filterSelect) {
                     filterSelect.value = data.country;
                     filterSelect.dispatchEvent(new Event('change'));
@@ -249,7 +243,6 @@
         }
     }
 
-    // Attach click events
     markers.forEach(function(marker) {
         marker.addEventListener('click', function(e) {
             e.stopPropagation();
@@ -258,7 +251,6 @@
         });
     });
 
-    // Click outside card to close
     document.getElementById('dashMapWrap').addEventListener('click', function(e) {
         if (e.target.classList.contains('dash-map-img') && activeMarker) {
             closeCard();
