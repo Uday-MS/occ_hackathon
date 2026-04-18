@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}Search Startups — Startup Intelligence{% endblock %}
+{% block page_title %}Search Startups{% endblock %}
+
+{% block content %}
+
+<!-- ===== SEARCH INPUT ===== -->
+<div class="search-container animate-in">
+    <div class="search-input-wrapper">
+        <span class="search-icon">🔍</span>
+        <input
+            type="text"
+            class="search-input"
+            id="startupSearchInput"
+            placeholder="Type a startup name to search..."
+            autocomplete="off"
+        >
+    </div>
+</div>
+
+<!-- ===== SEARCH RESULTS ===== -->
+<div id="searchResults">
+    <!-- Default empty state -->
+    <div class="empty-state" id="emptyState">
+        <div class="empty-state-icon">🔎</div>
+        <div class="empty-state-title">Search for startups</div>
+        <div class="empty-state-text">Type a name above to explore startup details — industry, country, funding stage, and amount raised.</div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+    const input = document.getElementById('startupSearchInput');
+    const resultsContainer = document.getElementById('searchResults');
+    const emptyState = document.getElementById('emptyState');
+    let debounceTimer = null;
+
+    input.addEventListener('input', function() {
+        clearTimeout(debounceTimer);
+        const query = this.value.trim();
+
+        if (query.length < 2) {
+            resultsContainer.innerHTML = '';
+            resultsContainer.appendChild(emptyState);
+            emptyState.style.display = 'block';
+            return;
+        }
+
+        debounceTimer = setTimeout(() => {
+            fetch('/api/search?name=' + encodeURIComponent(query))
+                .then(r => r.json())
+                .then(data => {
+                    renderResults(data.results);
+                });
+        }, 300);
+    });
+
+    function renderResults(results) {
+        if (!results || results.length === 0) {
+            resultsContainer.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">😕</div>
+                    <div class="empty-state-title">No results found</div>
+                    <div class="empty-state-text">Try a different search term or check the spelling.</div>
+                </div>
+            `;
+            return;
+        }
+
+        let html = '<div class="search-results">';
+        results.forEach((s, i) => {
+            const amount = s["Amount Raised (USD)"];
+            const amountStr = amount >= 1e9
+                ? '$' + (amount / 1e9).toFixed(2) + 'B'
+                : amount >= 1e6
+                    ? '$' + (amount / 1e6).toFixed(2) + 'M'
+                    : '$' + amount.toLocaleString();
+
+            html += `
+                <div class="search-result-card animate-in" style="animation-delay: ${i * 0.05}s">
+                    <div class="result-name">${escapeHtml(s["Startup Name"])}</div>
+                    <div class="result-details">
+                        <div class="result-detail">
+                            <span class="result-detail-label">Industry</span>
+                            <span class="result-detail-value"><span class="badge badge-industry">${escapeHtml(s["Industry"])}</span></span>
+                        </div>
+                        <div class="result-detail">
+                            <span class="result-detail-label">Country</span>
+                            <span class="result-detail-value"><span class="badge badge-country">${escapeHtml(s["Country"])}</span></span>
+                        </div>
+                        <div class="result-detail">
+                            <span class="result-detail-label">Funding Stage</span>
+                            <span class="result-detail-value"><span class="badge badge-stage">${escapeHtml(s["Funding Stage"])}</span></span>
+                        </div>
+                        <div class="result-detail">
+                            <span class="result-detail-label">Amount Raised</span>
+                            <span class="result-detail-value amount">${amountStr}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        html += '</div>';
+        resultsContainer.innerHTML = html;
+    }
+
+    function escapeHtml(str) {
+        if (!str) return 'N/A';
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+})();
+</script>
+{% endblock %}

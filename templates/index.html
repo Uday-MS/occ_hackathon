@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard — Startup Intelligence{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+
+<!-- ===== KPI STAT CARDS ===== -->
+<div class="stats-grid">
+    <div class="stat-card blue animate-in">
+        <div class="stat-card-header">
+            <span class="stat-card-label">Total Funding</span>
+            <span class="stat-card-icon">💰</span>
+        </div>
+        <div class="stat-card-value" data-counter="{{ total_funding }}">${{ total_funding }}B</div>
+        <div class="stat-card-sub">Across all startups</div>
+    </div>
+
+    <div class="stat-card purple animate-in">
+        <div class="stat-card-header">
+            <span class="stat-card-label">Total Startups</span>
+            <span class="stat-card-icon">🏢</span>
+        </div>
+        <div class="stat-card-value" data-counter="{{ total_startups }}">{{ total_startups }}</div>
+        <div class="stat-card-sub">Unique companies</div>
+    </div>
+
+    <div class="stat-card green animate-in">
+        <div class="stat-card-header">
+            <span class="stat-card-label">Top Country</span>
+            <span class="stat-card-icon">🌍</span>
+        </div>
+        <div class="stat-card-value" style="font-size: 26px;">{{ top_country }}</div>
+        <div class="stat-card-sub">Highest total funding</div>
+    </div>
+
+    <div class="stat-card orange animate-in">
+        <div class="stat-card-header">
+            <span class="stat-card-label">Avg. Funding</span>
+            <span class="stat-card-icon">📊</span>
+        </div>
+        <div class="stat-card-value" data-counter="{{ avg_funding }}">${{ avg_funding }}M</div>
+        <div class="stat-card-sub">Per startup (mean)</div>
+    </div>
+</div>
+
+<!-- ===== CHARTS ROW ===== -->
+<div class="charts-grid">
+    <!-- Funding Trend Mini Chart -->
+    <div class="chart-card animate-in">
+        <div class="chart-card-header">
+            <div class="chart-card-title"><span>📈</span> Funding Trends</div>
+        </div>
+        <div class="chart-container">
+            <canvas id="homeTrendChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Sector Distribution Doughnut -->
+    <div class="chart-card animate-in">
+        <div class="chart-card-header">
+            <div class="chart-card-title"><span>🏭</span> Sector Distribution</div>
+        </div>
+        <div class="chart-container">
+            <canvas id="homeSectorChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- ===== TOP STARTUPS TABLE ===== -->
+<div class="table-card animate-in">
+    <div class="table-card-header">
+        <div class="table-card-title">🏆 Top 10 Startups by Funding</div>
+    </div>
+    <table class="data-table" id="topStartupsTable">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Startup Name</th>
+                <th>Industry</th>
+                <th>Country</th>
+                <th>Stage</th>
+                <th>Funding</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for s in top_startups %}
+            <tr>
+                <td class="rank">{{ loop.index }}</td>
+                <td class="startup-name">{{ s["Startup Name"] }}</td>
+                <td><span class="badge badge-industry">{{ s["Industry"] }}</span></td>
+                <td><span class="badge badge-country">{{ s["Country"] }}</span></td>
+                <td><span class="badge badge-stage">{{ s["Funding Stage"] }}</span></td>
+                <td class="amount">${{ "%.2f"|format(s["Amount Raised (USD)"] / 1e6) }}M</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// ===== HOME PAGE CHARTS =====
+
+// --- Funding Trend Line Chart ---
+(function() {
+    const ctx = document.getElementById('homeTrendChart').getContext('2d');
+    const gradient = ctx.createLinearGradient(0, 0, 0, 350);
+    gradient.addColorStop(0, 'rgba(56, 189, 248, 0.3)');
+    gradient.addColorStop(1, 'rgba(56, 189, 248, 0.0)');
+
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: {{ trend_years | tojson }},
+            datasets: [{
+                label: 'Funding (USD)',
+                data: {{ trend_funding | tojson }},
+                borderColor: '#38bdf8',
+                backgroundColor: gradient,
+                borderWidth: 2.5,
+                tension: 0.4,
+                fill: true,
+                pointBackgroundColor: '#38bdf8',
+                pointBorderColor: '#0a0e1a',
+                pointBorderWidth: 2,
+                pointRadius: 4,
+                pointHoverRadius: 7,
+            }]
+        },
+        options: getDarkChartOptions('Yearly Funding Trend')
+    });
+})();
+
+// --- Sector Doughnut Chart ---
+(function() {
+    const sectorColors = [
+        '#38bdf8', '#a78bfa', '#34d399', '#fb923c',
+        '#f472b6', '#22d3ee', '#facc15', '#818cf8'
+    ];
+
+    new Chart(document.getElementById('homeSectorChart'), {
+        type: 'doughnut',
+        data: {
+            labels: {{ sector_labels | tojson }},
+            datasets: [{
+                data: {{ sector_values | tojson }},
+                backgroundColor: sectorColors,
+                borderColor: '#0a0e1a',
+                borderWidth: 3,
+                hoverBorderColor: '#1e293b',
+                hoverOffset: 8,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '62%',
+            plugins: {
+                legend: {
+                    position: 'right',
+                    labels: {
+                        color: '#94a3b8',
+                        font: { family: 'Inter', size: 12 },
+                        padding: 14,
+                        usePointStyle: true,
+                        pointStyleWidth: 10,
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                    titleColor: '#f1f5f9',
+                    bodyColor: '#94a3b8',
+                    borderColor: 'rgba(148, 163, 184, 0.15)',
+                    borderWidth: 1,
+                    padding: 12,
+                    cornerRadius: 10,
+                    titleFont: { family: 'Inter', weight: '600' },
+                    bodyFont: { family: 'Inter' },
+                    callbacks: {
+                        label: function(ctx) {
+                            return ctx.label + ': $' + formatNumber(ctx.raw);
+                        }
+                    }
+                }
+            }
+        }
+    });
+})();
+</script>
+{% endblock %}

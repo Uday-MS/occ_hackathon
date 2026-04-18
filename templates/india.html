@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+
+{% block title %}India Analysis — Startup Intelligence{% endblock %}
+{% block page_title %}🇮🇳 India Startup Analysis{% endblock %}
+
+{% block content %}
+
+<!-- ===== KPI STAT CARDS ===== -->
+<div class="stats-grid">
+    <div class="stat-card blue animate-in">
+        <div class="stat-card-header">
+            <span class="stat-card-label">Total Funding</span>
+            <span class="stat-card-icon">💰</span>
+        </div>
+        <div class="stat-card-value">${{ total_indian_funding }}M</div>
+        <div class="stat-card-sub">Indian startups combined</div>
+    </div>
+
+    <div class="stat-card purple animate-in">
+        <div class="stat-card-header">
+            <span class="stat-card-label">Total Startups</span>
+            <span class="stat-card-icon">🏢</span>
+        </div>
+        <div class="stat-card-value">{{ total_indian_startups }}</div>
+        <div class="stat-card-sub">Unique Indian startups</div>
+    </div>
+
+    <div class="stat-card green animate-in">
+        <div class="stat-card-header">
+            <span class="stat-card-label">Top City</span>
+            <span class="stat-card-icon">🏙️</span>
+        </div>
+        <div class="stat-card-value" style="font-size: 22px;">{{ top_city }}</div>
+        <div class="stat-card-sub">Highest funding city</div>
+    </div>
+
+    <div class="stat-card orange animate-in">
+        <div class="stat-card-header">
+            <span class="stat-card-label">Top Sector</span>
+            <span class="stat-card-icon">🏭</span>
+        </div>
+        <div class="stat-card-value" style="font-size: 20px;">{{ top_sector }}</div>
+        <div class="stat-card-sub">Most funded industry</div>
+    </div>
+</div>
+
+<!-- ===== CHARTS ===== -->
+<div class="charts-grid">
+    <!-- Indian Funding Trends -->
+    <div class="chart-card animate-in">
+        <div class="chart-card-header">
+            <div class="chart-card-title"><span>📈</span> India Year-wise Funding</div>
+        </div>
+        <div class="chart-container">
+            <canvas id="indiaTrendChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Top Indian Sectors -->
+    <div class="chart-card animate-in">
+        <div class="chart-card-header">
+            <div class="chart-card-title"><span>🏭</span> Top Indian Sectors</div>
+        </div>
+        <div class="chart-container">
+            <canvas id="indiaSectorChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- ===== GLOBAL VS INDIA COMPARISON ===== -->
+<div class="charts-grid">
+    <div class="chart-card full-width animate-in">
+        <div class="chart-card-header">
+            <div class="chart-card-title"><span>🌍</span> Global vs India — Funding Comparison</div>
+        </div>
+        <div class="chart-container" style="max-height: 420px;">
+            <canvas id="comparisonChart"></canvas>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// ===== INDIA TREND CHART =====
+(function() {
+    const ctx = document.getElementById('indiaTrendChart').getContext('2d');
+    const gradient = ctx.createLinearGradient(0, 0, 0, 350);
+    gradient.addColorStop(0, 'rgba(251, 146, 60, 0.3)');
+    gradient.addColorStop(1, 'rgba(251, 146, 60, 0.0)');
+
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: {{ india_years | tojson }},
+            datasets: [{
+                label: 'India Funding (USD)',
+                data: {{ india_funding | tojson }},
+                borderColor: '#fb923c',
+                backgroundColor: gradient,
+                borderWidth: 2.5,
+                tension: 0.4,
+                fill: true,
+                pointBackgroundColor: '#fb923c',
+                pointBorderColor: '#0a0e1a',
+                pointBorderWidth: 2,
+                pointRadius: 5,
+                pointHoverRadius: 8,
+            }]
+        },
+        options: getDarkChartOptions('India Yearly Funding')
+    });
+})();
+
+// ===== INDIA SECTORS CHART =====
+(function() {
+    const sectorColors = [
+        '#fb923c', '#38bdf8', '#a78bfa', '#34d399',
+        '#f472b6', '#22d3ee', '#facc15', '#818cf8',
+        '#4ade80', '#c084fc'
+    ];
+
+    new Chart(document.getElementById('indiaSectorChart'), {
+        type: 'bar',
+        data: {
+            labels: {{ india_sector_labels | tojson }},
+            datasets: [{
+                label: 'Funding (USD)',
+                data: {{ india_sector_values | tojson }},
+                backgroundColor: sectorColors.map(c => c + '99'),
+                borderColor: sectorColors,
+                borderWidth: 1.5,
+                borderRadius: 6,
+                borderSkipped: false,
+                maxBarThickness: 40,
+            }]
+        },
+        options: {
+            ...getDarkChartOptions('Indian Sectors'),
+            indexAxis: 'y',
+        }
+    });
+})();
+
+// ===== GLOBAL VS INDIA COMPARISON CHART =====
+(function() {
+    const ctx = document.getElementById('comparisonChart').getContext('2d');
+
+    const gradientGlobal = ctx.createLinearGradient(0, 0, 0, 400);
+    gradientGlobal.addColorStop(0, 'rgba(56, 189, 248, 0.2)');
+    gradientGlobal.addColorStop(1, 'rgba(56, 189, 248, 0.0)');
+
+    const gradientIndia = ctx.createLinearGradient(0, 0, 0, 400);
+    gradientIndia.addColorStop(0, 'rgba(251, 146, 60, 0.2)');
+    gradientIndia.addColorStop(1, 'rgba(251, 146, 60, 0.0)');
+
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: {{ compare_years | tojson }},
+            datasets: [
+                {
+                    label: 'Global Funding',
+                    data: {{ compare_global | tojson }},
+                    borderColor: '#38bdf8',
+                    backgroundColor: gradientGlobal,
+                    borderWidth: 2.5,
+                    tension: 0.4,
+                    fill: true,
+                    pointBackgroundColor: '#38bdf8',
+                    pointBorderColor: '#0a0e1a',
+                    pointBorderWidth: 2,
+                    pointRadius: 5,
+                    pointHoverRadius: 8,
+                },
+                {
+                    label: 'India Funding',
+                    data: {{ compare_india | tojson }},
+                    borderColor: '#fb923c',
+                    backgroundColor: gradientIndia,
+                    borderWidth: 2.5,
+                    tension: 0.4,
+                    fill: true,
+                    pointBackgroundColor: '#fb923c',
+                    pointBorderColor: '#0a0e1a',
+                    pointBorderWidth: 2,
+                    pointRadius: 5,
+                    pointHoverRadius: 8,
+                }
+            ]
+        },
+        options: getDarkChartOptions('Global vs India Comparison')
+    });
+})();
+</script>
+{% endblock %}

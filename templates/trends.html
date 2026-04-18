@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}Funding Trends — Startup Intelligence{% endblock %}
+{% block page_title %}Funding Trends{% endblock %}
+
+{% block content %}
+
+<!-- ===== FILTERS ===== -->
+<div class="filters-bar">
+    <div class="filter-group">
+        <span class="filter-label">Country</span>
+        <select class="filter-select" id="trendCountryFilter">
+            <option value="all">All Countries</option>
+            {% for c in countries %}
+            <option value="{{ c }}">{{ c }}</option>
+            {% endfor %}
+        </select>
+    </div>
+</div>
+
+<!-- ===== TREND CHART ===== -->
+<div class="charts-grid">
+    <div class="chart-card full-width animate-in">
+        <div class="chart-card-header">
+            <div class="chart-card-title"><span>📈</span> Year-wise Funding Trend</div>
+        </div>
+        <div class="chart-container" style="max-height: 450px;">
+            <canvas id="trendChart"></canvas>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+    const ctx = document.getElementById('trendChart').getContext('2d');
+    let trendChart = null;
+
+    function buildChart(years, funding) {
+        const gradient = ctx.createLinearGradient(0, 0, 0, 420);
+        gradient.addColorStop(0, 'rgba(56, 189, 248, 0.25)');
+        gradient.addColorStop(1, 'rgba(56, 189, 248, 0.0)');
+
+        if (trendChart) trendChart.destroy();
+
+        trendChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: years,
+                datasets: [{
+                    label: 'Total Funding (USD)',
+                    data: funding,
+                    borderColor: '#38bdf8',
+                    backgroundColor: gradient,
+                    borderWidth: 2.5,
+                    tension: 0.4,
+                    fill: true,
+                    pointBackgroundColor: '#38bdf8',
+                    pointBorderColor: '#0a0e1a',
+                    pointBorderWidth: 2,
+                    pointRadius: 5,
+                    pointHoverRadius: 8,
+                }]
+            },
+            options: getDarkChartOptions('Funding by Year')
+        });
+    }
+
+    // Initial chart with server data
+    buildChart({{ years | tojson }}, {{ funding | tojson }});
+
+    // Filter: Country
+    document.getElementById('trendCountryFilter').addEventListener('change', function() {
+        const country = this.value;
+        fetch('/api/trends?country=' + encodeURIComponent(country))
+            .then(r => r.json())
+            .then(data => {
+                buildChart(data.years, data.funding);
+            });
+    });
+})();
+</script>
+{% endblock %}

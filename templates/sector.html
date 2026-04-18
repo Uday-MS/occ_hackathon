@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}Sector Analysis — Startup Intelligence{% endblock %}
+{% block page_title %}Sector Analysis{% endblock %}
+
+{% block content %}
+
+<!-- ===== FILTERS ===== -->
+<div class="filters-bar">
+    <div class="filter-group">
+        <span class="filter-label">Country</span>
+        <select class="filter-select" id="sectorCountryFilter">
+            <option value="all">All Countries</option>
+            {% for c in countries %}
+            <option value="{{ c }}">{{ c }}</option>
+            {% endfor %}
+        </select>
+    </div>
+</div>
+
+<!-- ===== SECTOR CHART ===== -->
+<div class="charts-grid">
+    <div class="chart-card full-width animate-in">
+        <div class="chart-card-header">
+            <div class="chart-card-title"><span>🏭</span> Funding by Industry Sector</div>
+        </div>
+        <div class="chart-container" style="min-height: 520px; max-height: 650px;">
+            <canvas id="sectorChart"></canvas>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+    let sectorChart = null;
+    const barColors = [
+        '#38bdf8', '#a78bfa', '#34d399', '#fb923c',
+        '#f472b6', '#22d3ee', '#facc15', '#818cf8'
+    ];
+
+    function buildChart(labels, values) {
+        const ctx = document.getElementById('sectorChart').getContext('2d');
+
+        if (sectorChart) sectorChart.destroy();
+
+        // Create gradient for each bar
+        const bgColors = labels.map((_, i) => {
+            const color = barColors[i % barColors.length];
+            return color;
+        });
+
+        sectorChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Funding (USD)',
+                    data: values,
+                    backgroundColor: bgColors.map(c => c + '99'),
+                    borderColor: bgColors,
+                    borderWidth: 1.5,
+                    borderRadius: 6,
+                    borderSkipped: false,
+                    maxBarThickness: 70,
+                    barPercentage: 0.85,
+                    categoryPercentage: 0.9,
+                }]
+            },
+            options: {
+                ...getDarkChartOptions('Sector Funding'),
+                indexAxis: 'y',
+                interaction: {
+                    mode: 'nearest',
+                    intersect: true,
+                    axis: 'y',
+                },
+                scales: {
+                    // Y-axis is the CATEGORY axis (sector names) — no dollar formatting
+                    y: {
+                        grid: {
+                            color: 'rgba(148, 163, 184, 0.06)',
+                            drawBorder: false,
+                        },
+                        ticks: {
+                            color: '#94a3b8',
+                            font: { family: 'Inter', size: 12, weight: '500' },
+                        },
+                        border: { display: false },
+                    },
+                    // X-axis is the VALUE axis — dollar formatting
+                    x: {
+                        grid: {
+                            color: 'rgba(148, 163, 184, 0.06)',
+                            drawBorder: false,
+                        },
+                        ticks: {
+                            color: '#64748b',
+                            font: { family: 'Inter', size: 11 },
+                            callback: function(value) {
+                                return '$' + formatNumber(value);
+                            }
+                        },
+                        border: { display: false },
+                    }
+                }
+            }
+        });
+    }
+
+    // Initial chart
+    buildChart({{ labels | tojson }}, {{ values | tojson }});
+
+    // Filter: Country
+    document.getElementById('sectorCountryFilter').addEventListener('change', function() {
+        const country = this.value;
+        fetch('/api/sectors?country=' + encodeURIComponent(country))
+            .then(r => r.json())
+            .then(data => {
+                buildChart(data.labels, data.values);
+            });
+    });
+})();
+</script>
+{% endblock %}
