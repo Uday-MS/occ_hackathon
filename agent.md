@@ -1,157 +1,173 @@
-# 🚀 Startup Intelligence Dashboard – AI Agent Instructions
+# 🌍 Startup Intelligence Dashboard – Earth Edition
 
-## 🧠 Project Overview
-This is a professional-level Startup Intelligence Dashboard built using:
-- Flask (Python backend)
-- HTML, CSS, JavaScript (frontend)
-- Chart.js (data visualization)
-- Pandas (data processing)
+## 🧠 Project Vision
 
-The goal is to transform this into a **modern SaaS-style analytics dashboard** with advanced UI and features.
+This project is evolving into a **high-end, interactive, visually immersive web application** where users explore global startup funding through a **3D Earth-based interface**.
+
+Instead of a traditional dashboard, the UI should feel like a **modern space-themed product (Apple / NASA style UI)**.
 
 ---
 
-## ⚠️ IMPORTANT RULES (STRICT)
+## ⚠️ STRICT RULES
 
 - DO NOT rewrite the project from scratch
-- ALWAYS modify existing files
-- PRESERVE existing routes and functionality
-- DO NOT break working features
+- ALWAYS build on existing Flask structure
+- PRESERVE working routes and features
+- DO NOT break backend logic
+- UI can be redesigned fully
 - Keep code modular and clean
-- Separate backend and frontend logic properly
 
 ---
 
-## 📁 Project Structure
+## 🎯 CORE EXPERIENCE FLOW
 
-- app.py
-- templates/
-  - base.html
-  - index.html
-  - trends.html
-  - sector.html
-  - country.html
-  - india.html
-  - search.html
-- static/
-  - style.css
-  - script.js
-- datasets:
-  - cleaned_data.csv
-  - indian_startups.csv
+1. User opens website → sees **loading screen**
+2. A **3D Earth model rotates (high-quality, smooth animation)**
+3. After loading → transitions into main UI
+4. User can:
+   - Click on countries on Earth 🌍
+   - Or select from UI
+5. On click → navigates to **Country Intelligence Page**
 
 ---
 
-## 🎨 UI/UX DESIGN REQUIREMENTS
+## 🎨 UI/UX DESIGN (TOP PRIORITY)
 
-- Dark theme (modern SaaS style)
-- Sidebar navigation (left side)
-- Glassmorphism cards (blur + shadow)
-- Smooth animations and hover effects
-- Gradient highlights
-- Fully responsive layout
-
-Sidebar Pages:
-- Dashboard
-- Trends
-- Sectors
-- Countries
-- India Analysis
-- Search Startup
+### Theme:
+- Dark theme 🌑
+- Blue + Green glowing accents (space + tech feel)
+- Smooth gradients
+- Glassmorphism cards
+- Soft shadows and neon highlights
 
 ---
 
-## 📊 FEATURES TO IMPLEMENT
+### Layout Changes:
 
-### 1. Dashboard
+#### ✅ TOP NAVBAR (instead of sidebar)
+- Logo (StartupIQ 🚀)
+- Pages:
+  - Home
+  - Explore
+  - Countries
+  - India Analysis
+  - Search
+
+---
+
+### 🌍 HERO SECTION (MAIN ATTRACTION)
+
+- Large **3D Earth model (center/right)**
+- Slowly rotating
+- Subtle glow effect
+- Stars background (parallax effect)
+
+Left side:
+- Title: “Explore Global Startup Ecosystem”
+- Subtitle
+- CTA button: “Start Exploring”
+
+---
+
+## 🌐 INTERACTIVE EARTH FEATURES
+
+- Earth should rotate continuously
+- Hover effect on countries
+- Click interaction:
+  → Redirect to `/country/<country_name>`
+
+---
+
+## 📊 COUNTRY PAGE (VERY IMPORTANT)
+
+When user clicks a country:
+
+Show:
 - Total funding
-- Total startups
-- Top country
-- Average funding
-- Funding trends preview chart
-- Top 10 startups table
+- Number of startups
+- Top sectors
+- Funding trend chart
+- Top startups list
+
+UI:
+- Card-based layout
+- Smooth scroll animations
+- Section reveal animations
 
 ---
 
-### 2. Trends Page
-- Line chart (year vs funding)
-- Smooth curve (tension)
-- Gradient fill
-- Filters:
-  - Country
-  - Year
+## ⚙️ BACKEND (FLASK)
+
+- Add dynamic route:
+  `/country/<country_name>`
+
+- Use pandas to filter:
+  - Funding per country
+  - Sector distribution
+  - Year trends
+
+- Return JSON or render template
 
 ---
 
-### 3. Sector Page
-- Bar chart (sector vs funding)
-- Filter by country
+## 📊 DATA VISUALIZATION
+
+Use Chart.js:
+- Line chart → funding trend
+- Bar chart → sector distribution
+- Pie chart (optional) → sector share
 
 ---
 
-### 4. Country Page
-- Bar chart (country vs funding)
-- Filter by industry
+## ✨ ANIMATIONS
+
+- Page load animation
+- Scroll reveal animations
+- Hover effects on cards
+- Smooth transitions between pages
 
 ---
 
-### 5. India Analysis Page
+## 🔍 SEARCH FEATURE
+
+- Search startup name
+- Show details dynamically
+- Add live search suggestions
+
+---
+
+## 🇮🇳 INDIA ANALYSIS
+
 - Use indian_startups.csv
-- Show:
-  - Top sectors in India
-  - Year-wise funding
-  - Comparison with global data
+- Compare:
+  - India vs Global
+- Show insights visually
 
 ---
 
-### 6. Search Feature
-- Search startup by name
-- Show:
-  - Industry
-  - Country
-  - Funding stage
-  - Amount raised
+## 🧱 TECH ADDITIONS (OPTIONAL BUT RECOMMENDED)
 
----
-
-## ⚙️ BACKEND REQUIREMENTS (Flask)
-
-- Use pandas to process CSV
-- Create API routes:
-  - /api/trends
-  - /api/sectors
-  - /api/countries
-  - /api/search
-- Return JSON data
-- Use Jinja for passing initial data
-
----
-
-## 💻 FRONTEND REQUIREMENTS
-
-- Use Chart.js
-- Add:
-  - Smooth animations
-  - Tooltips
-  - Responsive charts
-- Use fetch() for dynamic updates
+- Use Three.js (for 3D Earth)
+- OR use a prebuilt globe library
 
 ---
 
 ## 🧼 CODE QUALITY
 
-- Write clean and readable code
-- Add comments
-- Avoid duplication
-- Follow modular structure
+- Clean structure
+- Modular JS
+- No duplicate logic
+- Separate backend & frontend properly
 
 ---
 
-## 🎯 FINAL GOAL
+## 🚀 FINAL GOAL
 
-This project should look like a **portfolio-level, production-ready dashboard**, not a beginner project.
+This should feel like:
+👉 A premium SaaS product  
+👉 Not a college project  
+👉 Highly interactive + visually stunning  
 
-Focus on:
-- UI quality
-- Interactivity
-- Real-world feel
+Focus:
+- Experience > Features
+- Smoothness > Quantity

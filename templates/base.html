@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Startup Intelligence Dashboard — Explore global startup funding data, trends, sectors, and India-specific analysis.">
-    <title>{% block title %}Startup Intelligence Dashboard{% endblock %}</title>
+    <meta name="description" content="StartupIQ — Explore the global startup ecosystem through an immersive, data-driven intelligence platform.">
+    <title>{% block title %}StartupIQ — Global Startup Intelligence{% endblock %}</title>
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
@@ -19,68 +19,80 @@
 </head>
 <body>
 
-    <!-- ===== SIDEBAR ===== -->
-    <aside class="sidebar" id="sidebar">
-        <div class="sidebar-brand">
-            <span class="brand-icon">🚀</span>
-            <span class="brand-text">StartupIQ</span>
-        </div>
+    <!-- ===== TOP NAVBAR ===== -->
+    <nav class="top-navbar" id="topNavbar">
+        <div class="navbar-inner">
+            <!-- Brand -->
+            <a href="/" class="navbar-brand" id="nav-brand">
+                <span class="navbar-brand-icon">🚀</span>
+                <span class="navbar-brand-text">StartupIQ</span>
+            </a>
 
-        <nav class="sidebar-nav">
-            <a href="/" class="nav-item {% if page == 'dashboard' %}active{% endif %}" id="nav-dashboard">
-                <span class="nav-icon">📊</span>
-                <span class="nav-label">Dashboard</span>
-            </a>
-            <a href="/trends" class="nav-item {% if page == 'trends' %}active{% endif %}" id="nav-trends">
-                <span class="nav-icon">📈</span>
-                <span class="nav-label">Trends</span>
-            </a>
-            <a href="/sector" class="nav-item {% if page == 'sectors' %}active{% endif %}" id="nav-sectors">
-                <span class="nav-icon">🏭</span>
-                <span class="nav-label">Sectors</span>
-            </a>
-            <a href="/country" class="nav-item {% if page == 'countries' %}active{% endif %}" id="nav-countries">
-                <span class="nav-icon">🌍</span>
-                <span class="nav-label">Countries</span>
-            </a>
-            <a href="/india" class="nav-item {% if page == 'india' %}active{% endif %}" id="nav-india">
-                <span class="nav-icon">🇮🇳</span>
-                <span class="nav-label">India Analysis</span>
-            </a>
-            <a href="/search" class="nav-item {% if page == 'search' %}active{% endif %}" id="nav-search">
-                <span class="nav-icon">🔍</span>
-                <span class="nav-label">Search Startup</span>
-            </a>
-        </nav>
+            <!-- Nav Links -->
+            <div class="navbar-links" id="navbarLinks">
+                <a href="/" class="navbar-link {% if page == 'dashboard' %}active{% endif %}" id="nav-home">
+                    <span class="navbar-link-icon">🏠</span>
+                    <span>Home</span>
+                </a>
+                <a href="/trends" class="navbar-link {% if page == 'trends' %}active{% endif %}" id="nav-trends">
+                    <span class="navbar-link-icon">📈</span>
+                    <span>Explore</span>
+                </a>
+                <a href="/sector" class="navbar-link {% if page == 'sectors' %}active{% endif %}" id="nav-sectors">
+                    <span class="navbar-link-icon">🏭</span>
+                    <span>Sectors</span>
+                </a>
+                <a href="/country" class="navbar-link {% if page == 'countries' %}active{% endif %}" id="nav-countries">
+                    <span class="navbar-link-icon">🌍</span>
+                    <span>Countries</span>
+                </a>
+                <a href="/india" class="navbar-link {% if page == 'india' %}active{% endif %}" id="nav-india">
+                    <span class="navbar-link-icon">🇮🇳</span>
+                    <span>India Analysis</span>
+                </a>
+                <a href="/search" class="navbar-link {% if page == 'search' %}active{% endif %}" id="nav-search">
+                    <span class="navbar-link-icon">🔍</span>
+                    <span>Search</span>
+                </a>
+            </div>
 
-        <div class="sidebar-footer">
-            <div class="sidebar-footer-text">Startup Intelligence v1.0</div>
+            <!-- Live Badge + Mobile Toggle -->
+            <div class="navbar-right">
+                <span class="header-badge" id="liveBadge">Live Data</span>
+                <button class="navbar-toggle" id="navbarToggle" aria-label="Toggle navigation">
+                    <span></span><span></span><span></span>
+                </button>
+            </div>
         </div>
-    </aside>
+    </nav>
 
     <!-- ===== MAIN CONTENT AREA ===== -->
     <main class="main-content">
-
-        <!-- Top Header Bar -->
-        <header class="top-header">
-            <button class="menu-toggle" id="menuToggle" aria-label="Toggle sidebar">
-                <span></span><span></span><span></span>
-            </button>
-            <h1 class="page-title">{% block page_title %}Dashboard{% endblock %}</h1>
-            <div class="header-right">
-                <span class="header-badge">Live Data</span>
-            </div>
-        </header>
+        {% block hero %}{% endblock %}
 
         <!-- Page Content -->
         <div class="content-area">
             {% block content %}{% endblock %}
         </div>
-
     </main>
 
     <!-- Main Script -->
     <script src="{{ url_for('static', filename='script.js') }}"></script>
+
+    <!-- Navbar mobile toggle -->
+    <script>
+        (function() {
+            const toggle = document.getElementById('navbarToggle');
+            const links = document.getElementById('navbarLinks');
+            if (toggle && links) {
+                toggle.addEventListener('click', function() {
+                    links.classList.toggle('open');
+                    toggle.classList.toggle('active');
+                });
+            }
+        })();
+    </script>
+
     {% block scripts %}{% endblock %}
 
 </body>
