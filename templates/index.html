@@ -77,7 +77,8 @@
 
 <!-- ===== STARTUP ANALYSIS SECTION (Half-Earth from bottom) ===== -->
 <section class="analysis-section" id="analysisSection">
-    <div class="analysis-content">
+    <!-- Default content: Planet Earth + country picker -->
+    <div class="analysis-content" id="analysisDefault">
         <span class="analysis-overline scroll-reveal">STARTUP ANALYSIS</span>
         <h2 class="analysis-title scroll-reveal">
             Planet <span class="analysis-highlight">Earth</span>
@@ -90,7 +91,50 @@
             <span>Get Started</span>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
         </a>
+        <!-- Country Picker Grid -->
+        <div class="country-grid scroll-reveal" id="countryGrid">
+            <button class="country-chip" data-country="USA" onclick="loadCountryDashboard('USA')">
+                <span class="country-chip-flag">🇺🇸</span>
+                <span class="country-chip-name">USA</span>
+            </button>
+            <button class="country-chip" data-country="India" onclick="loadCountryDashboard('India')">
+                <span class="country-chip-flag">🇮🇳</span>
+                <span class="country-chip-name">India</span>
+            </button>
+            <button class="country-chip" data-country="UK" onclick="loadCountryDashboard('UK')">
+                <span class="country-chip-flag">🇬🇧</span>
+                <span class="country-chip-name">UK</span>
+            </button>
+            <button class="country-chip" data-country="Germany" onclick="loadCountryDashboard('Germany')">
+                <span class="country-chip-flag">🇩🇪</span>
+                <span class="country-chip-name">Germany</span>
+            </button>
+            <button class="country-chip" data-country="France" onclick="loadCountryDashboard('France')">
+                <span class="country-chip-flag">🇫🇷</span>
+                <span class="country-chip-name">France</span>
+            </button>
+            <button class="country-chip" data-country="Canada" onclick="loadCountryDashboard('Canada')">
+                <span class="country-chip-flag">🇨🇦</span>
+                <span class="country-chip-name">Canada</span>
+            </button>
+            <button class="country-chip" data-country="Australia" onclick="loadCountryDashboard('Australia')">
+                <span class="country-chip-flag">🇦🇺</span>
+                <span class="country-chip-name">Australia</span>
+            </button>
+            <button class="country-chip" data-country="Netherlands" onclick="loadCountryDashboard('Netherlands')">
+                <span class="country-chip-flag">🇳🇱</span>
+                <span class="country-chip-name">Netherlands</span>
+            </button>
+        </div>
     </div>
+
+    <!-- Country Dashboard (hidden initially, shown on click) -->
+    <div class="analysis-content" id="countryDashboardPanel" style="display:none; max-width: 1000px;">
+        <div class="country-dashboard" id="countryDashboard">
+            <!-- Populated dynamically by JS -->
+        </div>
+    </div>
+
     <!-- Half-Earth rendered by Three.js below this section -->
     <div class="analysis-earth-glow"></div>
 </section>
@@ -306,5 +350,156 @@ document.getElementById('ctaGetStarted')?.addEventListener('click', function(e) 
     e.preventDefault();
     document.getElementById('dashboardSection')?.scrollIntoView({ behavior: 'smooth' });
 });
+
+// ===== COUNTRY DASHBOARD =====
+
+// Country flag mapping
+const countryFlags = {
+    'USA': '🇺🇸', 'India': '🇮🇳', 'UK': '🇬🇧', 'Germany': '🇩🇪',
+    'France': '🇫🇷', 'Canada': '🇨🇦', 'Australia': '🇦🇺', 'Netherlands': '🇳🇱'
+};
+
+// Track chart instance for cleanup
+let countryChartInstance = null;
+
+function loadCountryDashboard(countryName) {
+    const defaultPanel = document.getElementById('analysisDefault');
+    const dashPanel = document.getElementById('countryDashboardPanel');
+    const dashContent = document.getElementById('countryDashboard');
+
+    if (!defaultPanel || !dashPanel || !dashContent) return;
+
+    // Show loading state
+    defaultPanel.style.display = 'none';
+    dashPanel.style.display = 'flex';
+    dashContent.innerHTML = `
+        <div class="country-loading">
+            <div class="country-spinner"></div>
+            <span class="country-loading-text">Loading ${countryName} analytics...</span>
+        </div>
+    `;
+
+    // Scroll into view
+    document.getElementById('analysisSection')?.scrollIntoView({ behavior: 'smooth' });
+
+    // Fetch country data
+    fetch('/api/country-analytics?name=' + encodeURIComponent(countryName))
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+            if (data.error) {
+                dashContent.innerHTML = `
+                    <div class="country-loading">
+                        <span class="country-loading-text">⚠️ ${data.error}</span>
+                        <button class="country-back-btn" onclick="closeCountryDashboard()">
+                            ← Go Back
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+
+            const flag = countryFlags[data.country] || '🌍';
+            const totalB = (data.total_funding / 1e9).toFixed(2);
+            const avgM = (data.avg_funding / 1e6).toFixed(2);
+
+            dashContent.innerHTML = `
+                <div class="country-dashboard-header">
+                    <h2 class="country-dashboard-title">
+                        <span class="country-flag">${flag}</span>
+                        ${data.country} Startup Analytics
+                    </h2>
+                    <button class="country-back-btn" onclick="closeCountryDashboard()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+                        <span>Back to Globe</span>
+                    </button>
+                </div>
+
+                <div class="country-stats-grid">
+                    <div class="country-stat-card cs-green">
+                        <div class="country-stat-label">Total Funding</div>
+                        <div class="country-stat-value">$${totalB}B</div>
+                    </div>
+                    <div class="country-stat-card cs-blue">
+                        <div class="country-stat-label">Avg Funding</div>
+                        <div class="country-stat-value">$${avgM}M</div>
+                    </div>
+                    <div class="country-stat-card cs-purple">
+                        <div class="country-stat-label">Top Sector</div>
+                        <div class="country-stat-value" style="font-size:20px;">${data.top_sector}</div>
+                    </div>
+                    <div class="country-stat-card cs-green">
+                        <div class="country-stat-label">Startups</div>
+                        <div class="country-stat-value">${data.num_startups.toLocaleString()}</div>
+                    </div>
+                </div>
+
+                <div class="country-chart-card">
+                    <div class="chart-card-header">
+                        <div class="chart-card-title"><span>📊</span> Sector-wise Funding</div>
+                    </div>
+                    <div class="country-chart-container">
+                        <canvas id="countrySectorChart"></canvas>
+                    </div>
+                </div>
+            `;
+
+            // Destroy previous chart if exists
+            if (countryChartInstance) {
+                countryChartInstance.destroy();
+                countryChartInstance = null;
+            }
+
+            // Build bar chart
+            const ctx = document.getElementById('countrySectorChart');
+            if (ctx) {
+                const barColors = [
+                    '#34d399', '#38bdf8', '#a78bfa', '#fb923c',
+                    '#f472b6', '#22d3ee', '#facc15', '#818cf8'
+                ];
+                countryChartInstance = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: data.sector_labels,
+                        datasets: [{
+                            label: 'Funding (USD)',
+                            data: data.sector_values,
+                            backgroundColor: barColors.slice(0, data.sector_labels.length),
+                            borderColor: 'transparent',
+                            borderWidth: 0,
+                            borderRadius: 6,
+                            barPercentage: 0.65,
+                        }]
+                    },
+                    options: getDarkChartOptions('Sector-wise Funding')
+                });
+            }
+        })
+        .catch(function(err) {
+            dashContent.innerHTML = `
+                <div class="country-loading">
+                    <span class="country-loading-text">⚠️ Failed to load data. Try again.</span>
+                    <button class="country-back-btn" onclick="closeCountryDashboard()">
+                        ← Go Back
+                    </button>
+                </div>
+            `;
+        });
+}
+
+function closeCountryDashboard() {
+    const defaultPanel = document.getElementById('analysisDefault');
+    const dashPanel = document.getElementById('countryDashboardPanel');
+
+    if (countryChartInstance) {
+        countryChartInstance.destroy();
+        countryChartInstance = null;
+    }
+
+    if (dashPanel) dashPanel.style.display = 'none';
+    if (defaultPanel) defaultPanel.style.display = 'flex';
+
+    document.getElementById('analysisSection')?.scrollIntoView({ behavior: 'smooth' });
+}
+
 </script>
 {% endblock %}

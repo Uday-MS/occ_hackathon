@@ -383,8 +383,8 @@ document.addEventListener('DOMContentLoaded', function() {
         fragmentShader: [
             'varying vec3 vNormal;',
             'void main() {',
-            '    float intensity = pow(0.65 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 2.0);',
-            '    gl_FragColor = vec4(0.3, 0.7, 1.0, 1.0) * intensity * 1.2;',
+            '    float intensity = pow(0.55 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 2.5);',
+            '    gl_FragColor = vec4(0.3, 0.7, 1.0, 0.8) * intensity * 0.6;',
             '}'
         ].join('\n'),
         blending: THREE.AdditiveBlending,
@@ -411,8 +411,8 @@ document.addEventListener('DOMContentLoaded', function() {
         fragmentShader: [
             'varying vec3 vNormal;',
             'void main() {',
-            '    float intensity = pow(0.5 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 2.5);',
-            '    gl_FragColor = vec4(0.2, 0.5, 0.9, 0.6) * intensity;',
+            '    float intensity = pow(0.45 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 3.0);',
+            '    gl_FragColor = vec4(0.2, 0.5, 0.9, 0.25) * intensity;',
             '}'
         ].join('\n'),
         blending: THREE.AdditiveBlending,

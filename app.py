@@ -391,6 +391,42 @@ def api_comparison():
     })
 
 
+@app.route("/api/country-analytics")
+def api_country_analytics():
+    """Country-level analytics. Query param: name (country name)."""
+    country_name = request.args.get("name", "").strip()
+    if not country_name:
+        return jsonify({"error": "Missing country name"}), 400
+
+    # Filter data for the country
+    filtered = df[df["Country"].str.lower() == country_name.lower()]
+
+    if filtered.empty:
+        return jsonify({"error": f"No data found for '{country_name}'"}), 404
+
+    total_funding = float(filtered["Amount Raised (USD)"].sum())
+    avg_funding = float(filtered["Amount Raised (USD)"].mean())
+    num_startups = int(filtered["Startup Name"].nunique())
+
+    # Sector-wise funding
+    sector_data = (
+        filtered.groupby("Industry")["Amount Raised (USD)"]
+        .sum()
+        .sort_values(ascending=False)
+    )
+    top_sector = sector_data.index[0] if len(sector_data) > 0 else "N/A"
+
+    return jsonify({
+        "country": country_name,
+        "total_funding": total_funding,
+        "avg_funding": avg_funding,
+        "num_startups": num_startups,
+        "top_sector": top_sector,
+        "sector_labels": sector_data.index.tolist(),
+        "sector_values": [float(v) for v in sector_data.values.tolist()],
+    })
+
+
 @app.route("/api/filters")
 def api_filters():
     """Available filter options for dropdowns."""
