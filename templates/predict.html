@@ -1,0 +1,320 @@
+{% extends "base.html" %}
+
+{% block title %}StartupIQ — ML Prediction{% endblock %}
+
+{% block hero %}
+<!-- ===== THREE.JS CDN ===== -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+
+<!-- ===== STAR FIELD BACKGROUND ===== -->
+<div class="starfield" id="starfield">
+    <div class="stars stars-sm"></div>
+    <div class="stars stars-md"></div>
+    <div class="stars stars-lg"></div>
+</div>
+
+<!-- ===== THREE.JS CANVAS (Fixed, full-viewport) ===== -->
+<canvas id="earthCanvas"></canvas>
+{% endblock %}
+
+{% block content %}
+
+<!-- ===== ML PREDICTION PAGE ===== -->
+<div class="predict-page" id="predictPage">
+
+    <!-- Page Header -->
+    <div class="predict-header scroll-reveal">
+        <div class="predict-header-badge">
+            <span class="predict-badge-dot"></span>
+            AI-Powered Insights
+        </div>
+        <h1 class="predict-title">
+            Startup <span class="predict-highlight">Funding Predictor</span>
+        </h1>
+        <p class="predict-subtitle">
+            Select parameters below and let our ML model estimate funding potential and success probability.
+        </p>
+    </div>
+
+    <!-- Prediction Card -->
+    <div class="predict-card scroll-reveal">
+
+        <!-- Form Section -->
+        <div class="predict-form">
+            <div class="predict-form-grid">
+
+                <!-- Country -->
+                <div class="predict-field">
+                    <label class="predict-label" for="predictCountry">
+                        <span class="predict-label-icon">🌍</span>
+                        Country
+                    </label>
+                    <select class="predict-select" id="predictCountry">
+                        <option value="" disabled selected>Select country</option>
+                        {% for c in countries %}
+                        <option value="{{ c }}">{{ c }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Sector -->
+                <div class="predict-field">
+                    <label class="predict-label" for="predictSector">
+                        <span class="predict-label-icon">🏭</span>
+                        Industry Sector
+                    </label>
+                    <select class="predict-select" id="predictSector">
+                        <option value="" disabled selected>Select sector</option>
+                        {% for ind in industries %}
+                        <option value="{{ ind }}">{{ ind }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Stage -->
+                <div class="predict-field">
+                    <label class="predict-label" for="predictStage">
+                        <span class="predict-label-icon">📊</span>
+                        Funding Stage
+                    </label>
+                    <select class="predict-select" id="predictStage">
+                        <option value="" disabled selected>Select stage</option>
+                        {% for s in stages %}
+                        <option value="{{ s }}">{{ s }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <!-- Predict Button -->
+            <button class="predict-btn" id="predictBtn" type="button">
+                <span class="predict-btn-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                    </svg>
+                </span>
+                <span>Generate Prediction</span>
+            </button>
+        </div>
+
+        <!-- Divider -->
+        <div class="predict-divider" id="predictDivider"></div>
+
+        <!-- Results Section (hidden initially) -->
+        <div class="predict-results" id="predictResults">
+
+            <!-- Loading State -->
+            <div class="predict-loading" id="predictLoading">
+                <div class="predict-spinner"></div>
+                <span>Analyzing parameters...</span>
+            </div>
+
+            <!-- Results Content -->
+            <div class="predict-results-content" id="predictResultsContent">
+
+                <div class="predict-results-header">
+                    <span class="predict-results-icon">🎯</span>
+                    Prediction Results
+                </div>
+
+                <div class="predict-results-grid">
+                    <!-- Predicted Funding -->
+                    <div class="predict-result-card green">
+                        <div class="predict-result-label">Predicted Funding</div>
+                        <div class="predict-result-value" id="predictedFunding">—</div>
+                        <div class="predict-result-bar">
+                            <div class="predict-result-bar-fill green" id="fundingBar"></div>
+                        </div>
+                        <div class="predict-result-note" id="fundingNote">Based on sector & stage averages</div>
+                    </div>
+
+                    <!-- Success Probability -->
+                    <div class="predict-result-card blue">
+                        <div class="predict-result-label">Success Probability</div>
+                        <div class="predict-result-value" id="predictedSuccess">—</div>
+                        <div class="predict-result-bar">
+                            <div class="predict-result-bar-fill blue" id="successBar"></div>
+                        </div>
+                        <div class="predict-result-note" id="successNote">Likelihood of reaching next stage</div>
+                    </div>
+                </div>
+
+                <!-- Insight Tags -->
+                <div class="predict-insights" id="predictInsights">
+                    <div class="predict-insight-tag green">
+                        <span>🔥</span> <span id="insightText1">High-growth sector</span>
+                    </div>
+                    <div class="predict-insight-tag blue">
+                        <span>📈</span> <span id="insightText2">Strong market demand</span>
+                    </div>
+                    <div class="predict-insight-tag purple">
+                        <span>🌍</span> <span id="insightText3">Favorable ecosystem</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Disclaimer -->
+    <p class="predict-disclaimer scroll-reveal">
+        ⚠️ Predictions powered by a Random Forest model trained on historical startup data. Not financial advice.
+    </p>
+
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// ===== ML PREDICTION PAGE LOGIC (Real API) =====
+(function() {
+    const countrySelect = document.getElementById('predictCountry');
+    const sectorSelect  = document.getElementById('predictSector');
+    const stageSelect   = document.getElementById('predictStage');
+    const predictBtn    = document.getElementById('predictBtn');
+    const resultsDiv    = document.getElementById('predictResults');
+    const loadingDiv    = document.getElementById('predictLoading');
+    const contentDiv    = document.getElementById('predictResultsContent');
+    const divider       = document.getElementById('predictDivider');
+
+    if (!predictBtn) return;
+
+    // --- Connect country dropdown to Earth ---
+    countrySelect.addEventListener('change', function() {
+        if (typeof window.focusEarthOnCountry === 'function') {
+            window.focusEarthOnCountry(this.value);
+        }
+    });
+
+    // --- Stage label mapping for insight text ---
+    const stageLabels = {
+        'Seed':     'Early stage',
+        'Series A': 'Growth stage',
+        'Series B': 'Scaling stage',
+        'Series C': 'Expansion stage',
+        'IPO':      'Public market',
+    };
+
+    // --- Format currency ---
+    function formatFunding(value) {
+        if (value >= 1e9) {
+            return '$' + (value / 1e9).toFixed(2) + 'B';
+        } else if (value >= 1e6) {
+            return '$' + (value / 1e6).toFixed(1) + 'M';
+        } else if (value >= 1e3) {
+            return '$' + (value / 1e3).toFixed(0) + 'K';
+        }
+        return '$' + value.toFixed(0);
+    }
+
+    // --- Show error toast ---
+    function showError(msg) {
+        // Re-use loading area for error display
+        loadingDiv.innerHTML =
+            '<div style="color:#ff6b6b;text-align:center;padding:1rem;">' +
+            '<span style="font-size:1.5rem;">⚠️</span>' +
+            '<p style="margin:.5rem 0 0;font-size:.95rem;">' + msg + '</p></div>';
+        loadingDiv.style.display = 'flex';
+        contentDiv.style.display = 'none';
+    }
+
+    // --- Reset loading spinner ---
+    function resetLoader() {
+        loadingDiv.innerHTML =
+            '<div class="predict-spinner"></div><span>Analyzing parameters…</span>';
+    }
+
+    // --- Generate REAL prediction via backend API ---
+    predictBtn.addEventListener('click', function() {
+        const country = countrySelect.value;
+        const sector  = sectorSelect.value;
+        const stage   = stageSelect.value;
+
+        if (!country || !sector || !stage) {
+            predictBtn.classList.add('shake');
+            setTimeout(() => predictBtn.classList.remove('shake'), 500);
+            return;
+        }
+
+        // Show loading
+        resetLoader();
+        resultsDiv.classList.add('visible');
+        divider.classList.add('visible');
+        loadingDiv.style.display = 'flex';
+        contentDiv.style.display = 'none';
+
+        // Focus Earth on country
+        if (typeof window.focusEarthOnCountry === 'function') {
+            window.focusEarthOnCountry(country);
+        }
+
+        // Disable button while loading
+        predictBtn.disabled = true;
+        predictBtn.style.opacity = '0.6';
+
+        // Call backend ML API
+        fetch('/api/predict', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                country: country,
+                sector: sector,
+                stage: stage
+            })
+        })
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+            // Re-enable button
+            predictBtn.disabled = false;
+            predictBtn.style.opacity = '1';
+
+            if (data.error) {
+                showError(data.error);
+                return;
+            }
+
+            const funding    = data.predicted_funding;
+            const successPct = data.success_probability;
+            const fundingStr = formatFunding(funding);
+
+            // Funding bar width (normalize: $1B = 100%)
+            const fundingBarPct = Math.min(100, (funding / 1e9) * 100);
+
+            // Update DOM
+            document.getElementById('predictedFunding').textContent = fundingStr;
+            document.getElementById('predictedSuccess').textContent = successPct + '%';
+
+            // Animate bars
+            document.getElementById('fundingBar').style.width = fundingBarPct + '%';
+            document.getElementById('successBar').style.width  = successPct + '%';
+
+            // Update notes
+            const stageLabel = stageLabels[stage] || stage;
+            document.getElementById('fundingNote').textContent =
+                stageLabel + ' • ' + sector + ' sector in ' + country;
+            document.getElementById('successNote').textContent =
+                'Based on ' + stage + ' stage performance metrics (R² ' + data.model_r2 + ')';
+
+            // Update insight tags
+            document.getElementById('insightText1').textContent =
+                sector + ' is trending in ' + country;
+            document.getElementById('insightText2').textContent =
+                stage + ' stage shows strong momentum';
+            document.getElementById('insightText3').textContent =
+                country + ' ecosystem is growing';
+
+            // Show results, hide loading
+            loadingDiv.style.display = 'none';
+            contentDiv.style.display = 'block';
+        })
+        .catch(function(err) {
+            predictBtn.disabled = false;
+            predictBtn.style.opacity = '1';
+            showError('Network error — please try again.');
+            console.error('Prediction API error:', err);
+        });
+    });
+
+})();
+</script>
+{% endblock %}

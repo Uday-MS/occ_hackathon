@@ -496,16 +496,20 @@ document.addEventListener('DOMContentLoaded', function() {
     const heroPos = { x: 0, y: -5.5, scale: 2.5 };
     // Section 2: full earth on right side
     const analysisPos = { x: 3.5, y: 0.2, scale: 1.0 };
-    // Dashboard sections: centered background earth
+    // Dashboard / standalone pages: centered background earth
     const dashPos = { x: 0, y: 0, scale: 1.6 };
 
     let scrollProgress = 0;
     let dashProgress = 0;
     const heroSection = document.getElementById('heroSection');
     const analysisSection = document.getElementById('analysisSection');
-    const dashboardSection = document.getElementById('dashboardSection');
+
+    // Detect if we're on a standalone page (no hero section, e.g. /predict)
+    const isStandalonePage = !heroSection;
 
     function updateScrollProgress() {
+        // On standalone pages, Earth stays centered — no scroll transitions
+        if (isStandalonePage) return;
         if (!heroSection || !analysisSection) return;
 
         const heroBottom = heroSection.offsetTop + heroSection.offsetHeight;
@@ -562,9 +566,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // -------------------------------------------------------------------------
     // Animation Loop
     // -------------------------------------------------------------------------
-    let currentX = heroPos.x;
-    let currentY = heroPos.y;
-    let currentScale = heroPos.scale;
+    // On standalone pages, start at centered dashboard position
+    let currentX = isStandalonePage ? dashPos.x : heroPos.x;
+    let currentY = isStandalonePage ? dashPos.y : heroPos.y;
+    let currentScale = isStandalonePage ? dashPos.scale : heroPos.scale;
 
     function animate() {
         requestAnimationFrame(animate);
@@ -586,27 +591,38 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
 
-        // --- Scroll-driven positioning ---
-        const t = easeInOutCubic(scrollProgress);
-        const dt = easeInOutCubic(dashProgress);
-
+        // --- Positioning ---
         let finalTargetX, finalTargetY, finalTargetScale;
 
-        if (dashProgress > 0) {
-            // Transition from analysis pos to dashboard background pos
-            finalTargetX = lerp(analysisPos.x, dashPos.x, dt);
-            finalTargetY = lerp(analysisPos.y, dashPos.y, dt);
-            finalTargetScale = lerp(analysisPos.scale, dashPos.scale, dt);
-        } else {
-            // Hero to analysis transition
-            finalTargetX = lerp(heroPos.x, analysisPos.x, t);
-            finalTargetY = lerp(heroPos.y, analysisPos.y, t);
-            finalTargetScale = lerp(heroPos.scale, analysisPos.scale, t);
-        }
+        if (isStandalonePage) {
+            // Standalone pages: fixed centered position
+            finalTargetX = dashPos.x;
+            finalTargetY = dashPos.y;
+            finalTargetScale = dashPos.scale;
 
-        // Apply country zoom override if focused and in dashboard area
-        if (isCountryFocused && targetScale && dashProgress > 0.3) {
-            finalTargetScale = lerp(finalTargetScale, targetScale, 0.5);
+            // Apply country zoom on standalone pages
+            if (isCountryFocused && targetScale) {
+                finalTargetScale = targetScale;
+            }
+        } else {
+            // Home page: scroll-driven positioning
+            const t = easeInOutCubic(scrollProgress);
+            const dt = easeInOutCubic(dashProgress);
+
+            if (dashProgress > 0) {
+                finalTargetX = lerp(analysisPos.x, dashPos.x, dt);
+                finalTargetY = lerp(analysisPos.y, dashPos.y, dt);
+                finalTargetScale = lerp(analysisPos.scale, dashPos.scale, dt);
+            } else {
+                finalTargetX = lerp(heroPos.x, analysisPos.x, t);
+                finalTargetY = lerp(heroPos.y, analysisPos.y, t);
+                finalTargetScale = lerp(heroPos.scale, analysisPos.scale, t);
+            }
+
+            // Apply country zoom on home page dashboard area
+            if (isCountryFocused && targetScale && dashProgress > 0.3) {
+                finalTargetScale = lerp(finalTargetScale, targetScale, 0.5);
+            }
         }
 
         // Smooth interpolation for buttery transitions
@@ -682,6 +698,7 @@ document.addEventListener('DOMContentLoaded', function() {
             'exploreTrendFilter',
             'sectorCountryFilter',
             'countryIndustryFilter',
+            'predictCountry',
         ];
 
         filterIds.forEach(function(id) {
@@ -691,7 +708,7 @@ document.addEventListener('DOMContentLoaded', function() {
             el.addEventListener('change', function() {
                 const val = this.value;
                 // For country filters: focus the earth
-                if (id === 'exploreTrendFilter' || id === 'sectorCountryFilter') {
+                if (id === 'exploreTrendFilter' || id === 'sectorCountryFilter' || id === 'predictCountry') {
                     window.focusEarthOnCountry(val);
                 }
                 // For industry filter (countryIndustryFilter) — no country to focus

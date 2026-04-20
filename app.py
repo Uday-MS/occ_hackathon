@@ -1,6 +1,8 @@
 from flask import Flask, render_template, request, jsonify
 import pandas as pd
 import numpy as np
+import joblib
+import os
 
 app = Flask(__name__)
 
@@ -8,6 +10,31 @@ app = Flask(__name__)
 # DATA LOADING — Global dataset
 # =============================================================================
 df = pd.read_csv("cleaned_data.csv")
+
+# =============================================================================
+# ML MODEL LOADING — Load once at startup (cached)
+# =============================================================================
+_model = None
+_encoders_payload = None
+
+
+def get_model():
+    """Load and cache the trained ML model + encoders."""
+    global _model, _encoders_payload
+    if _model is None:
+        model_path = os.path.join(os.path.dirname(__file__), "model.pkl")
+        enc_path = os.path.join(os.path.dirname(__file__), "encoders.pkl")
+        if os.path.exists(model_path) and os.path.exists(enc_path):
+            _model = joblib.load(model_path)
+            _encoders_payload = joblib.load(enc_path)
+            print("✅ ML model loaded successfully")
+        else:
+            print("⚠️  model.pkl / encoders.pkl not found — run model.py first")
+    return _model, _encoders_payload
+
+
+# Eagerly load model at startup
+get_model()
 
 # =============================================================================
 # DATA LOADING — Indian startups dataset
@@ -134,6 +161,20 @@ def home():
         country_bar_labels=country_bar_labels,
         country_bar_values=country_bar_values,
         industries=industries,
+    )
+
+
+@app.route("/predict")
+def predict():
+    countries = sorted(df["Country"].unique().tolist())
+    industries = sorted(df["Industry"].unique().tolist())
+    stages = sorted(df["Funding Stage"].unique().tolist())
+    return render_template(
+        "predict.html",
+        page="predict",
+        countries=countries,
+        industries=industries,
+        stages=stages,
     )
 
 
@@ -470,6 +511,80 @@ def api_filters():
         "countries": sorted(df["Country"].unique().tolist()),
         "industries": sorted(df["Industry"].unique().tolist()),
         "years": years,
+    })
+
+
+# =============================================================================
+# ML PREDICTION API
+# =============================================================================
+
+@app.route("/api/predict", methods=["POST"])
+def api_predict():
+    """Predict startup funding using the trained Random Forest model."""
+    model, payload = get_model()
+
+    if model is None or payload is None:
+        return jsonify({"error": "ML model not loaded. Run model.py first."}), 500
+
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({"error": "Invalid JSON payload"}), 400
+
+    country = data.get("country", "").strip()
+    sector = data.get("sector", "").strip()
+    stage = data.get("stage", "").strip()
+
+    if not country or not sector or not stage:
+        return jsonify({"error": "Missing required fields: country, sector, stage"}), 400
+
+    encoders = payload["encoders"]
+    feature_names = payload["feature_names"]
+    max_funding = payload["max_funding"]
+    percentile_90 = payload["percentile_90"]
+
+    # Validate that inputs are known to the encoders
+    errors = []
+    if country not in encoders["Country"].classes_:
+        errors.append(f"Unknown country: '{country}'")
+    if sector not in encoders["Industry"].classes_:
+        errors.append(f"Unknown sector: '{sector}'")
+    if stage not in encoders["Funding Stage"].classes_:
+        errors.append(f"Unknown funding stage: '{stage}'")
+
+    if errors:
+        return jsonify({"error": "; ".join(errors)}), 400
+
+    # Encode inputs
+    try:
+        encoded_country = encoders["Country"].transform([country])[0]
+        encoded_industry = encoders["Industry"].transform([sector])[0]
+        encoded_stage = encoders["Funding Stage"].transform([stage])[0]
+    except Exception as e:
+        return jsonify({"error": f"Encoding failed: {str(e)}"}), 400
+
+    # Predict
+    X_input = pd.DataFrame(
+        [[encoded_country, encoded_industry, encoded_stage]],
+        columns=feature_names,
+    )
+    predicted_funding = float(model.predict(X_input)[0])
+
+    # Ensure non-negative
+    predicted_funding = max(0, predicted_funding)
+
+    # Success probability: normalized against dataset distribution
+    success_probability = min(95, max(50, (predicted_funding / percentile_90) * 75))
+    success_probability = round(success_probability, 1)
+
+    # Model metadata
+    r2 = payload.get("r2_score", 0)
+    mae = payload.get("mae", 0)
+
+    return jsonify({
+        "predicted_funding": round(predicted_funding, 2),
+        "success_probability": success_probability,
+        "model_r2": round(r2, 4),
+        "model_mae": round(mae, 2),
     })
 
 
