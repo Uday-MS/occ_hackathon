@@ -89,6 +89,29 @@ def home():
         .to_dict("records")
     )
 
+    # --- Data for scroll-based sections ---
+
+    # Explore section: funding trends (same as /trends route)
+    explore_years = trend_years
+    explore_funding = trend_funding
+    countries = sorted(df["Country"].unique().tolist())
+
+    # Sector Analysis section (same as /sector route)
+    sector_bar_data = df.groupby("Industry")["Amount Raised (USD)"].sum().sort_values(ascending=False)
+    sector_bar_labels = sector_bar_data.index.tolist()
+    sector_bar_values = sector_bar_data.values.tolist()
+
+    # Country Analysis section (same as /country route)
+    country_bar_data = (
+        df.groupby("Country")["Amount Raised (USD)"]
+        .sum()
+        .sort_values(ascending=False)
+        .head(10)
+    )
+    country_bar_labels = country_bar_data.index.tolist()
+    country_bar_values = country_bar_data.values.tolist()
+    industries = sorted(df["Industry"].unique().tolist())
+
     return render_template(
         "index.html",
         page="dashboard",
@@ -102,6 +125,15 @@ def home():
         sector_labels=sector_labels,
         sector_values=sector_values,
         top_startups=top_startups,
+        # Scroll-based section data
+        explore_years=explore_years,
+        explore_funding=explore_funding,
+        countries=countries,
+        sector_bar_labels=sector_bar_labels,
+        sector_bar_values=sector_bar_values,
+        country_bar_labels=country_bar_labels,
+        country_bar_values=country_bar_values,
+        industries=industries,
     )
 
 

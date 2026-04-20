@@ -220,7 +220,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 // =============================================================================
-// THREE.JS: 3D Earth with realistic texture, glow, and scroll transitions
+// THREE.JS: 3D Earth — persistent background with country interaction
 // =============================================================================
 document.addEventListener('DOMContentLoaded', function() {
     // Only initialize if Three.js and the canvas exist
@@ -443,16 +443,67 @@ document.addEventListener('DOMContentLoaded', function() {
     earth.rotation.z = -0.1;
 
     // -------------------------------------------------------------------------
+    // Country Coordinates (longitude in radians for Y-rotation)
+    // -------------------------------------------------------------------------
+    const countryCoords = {
+        'USA':         { rotY: 1.65,  rotX: 0.15,  label: '🇺🇸 USA' },
+        'India':       { rotY: -1.35, rotX: 0.0,   label: '🇮🇳 India' },
+        'UK':          { rotY: 0.0,   rotX: 0.20,  label: '🇬🇧 UK' },
+        'Germany':     { rotY: -0.17, rotX: 0.18,  label: '🇩🇪 Germany' },
+        'France':      { rotY: -0.04, rotX: 0.15,  label: '🇫🇷 France' },
+        'Canada':      { rotY: 1.55,  rotX: 0.25,  label: '🇨🇦 Canada' },
+        'Australia':   { rotY: -2.35, rotX: -0.20, label: '🇦🇺 Australia' },
+        'Netherlands': { rotY: -0.08, rotX: 0.20,  label: '🇳🇱 Netherlands' },
+    };
+
+    // -------------------------------------------------------------------------
+    // Country focus state
+    // -------------------------------------------------------------------------
+    let isCountryFocused = false;
+    let targetRotY = null;
+    let targetRotX = null;
+    let targetScale = null;
+    let autoRotate = true;
+    const defaultScale = 1.0;
+    const focusedScale = 1.35;
+
+    // API: Focus on a country (called from filter dropdowns)
+    window.focusEarthOnCountry = function(countryName) {
+        if (!countryName || countryName === 'all') {
+            // Reset to default
+            isCountryFocused = false;
+            autoRotate = true;
+            targetRotY = null;
+            targetRotX = 0.15;
+            targetScale = null;
+            return;
+        }
+
+        const coords = countryCoords[countryName];
+        if (!coords) return;
+
+        isCountryFocused = true;
+        autoRotate = false;
+        targetRotY = coords.rotY;
+        targetRotX = coords.rotX;
+        targetScale = focusedScale;
+    };
+
+    // -------------------------------------------------------------------------
     // Scroll-based Earth positioning
     // -------------------------------------------------------------------------
-    // Hero position: right side
-    const heroPos = { x: 3.5, y: 0.2, scale: 1.0 };
-    // Analysis section: bottom center, larger (half visible)
-    const analysisPos = { x: 0, y: -4.5, scale: 2.2 };
+    // Hero position: bottom center, half-earth visible (large, pushed below viewport)
+    const heroPos = { x: 0, y: -5.5, scale: 2.5 };
+    // Section 2: full earth on right side
+    const analysisPos = { x: 3.5, y: 0.2, scale: 1.0 };
+    // Dashboard sections: centered background earth
+    const dashPos = { x: 0, y: 0, scale: 1.6 };
 
     let scrollProgress = 0;
+    let dashProgress = 0;
     const heroSection = document.getElementById('heroSection');
     const analysisSection = document.getElementById('analysisSection');
+    const dashboardSection = document.getElementById('dashboardSection');
 
     function updateScrollProgress() {
         if (!heroSection || !analysisSection) return;
@@ -460,22 +511,29 @@ document.addEventListener('DOMContentLoaded', function() {
         const heroBottom = heroSection.offsetTop + heroSection.offsetHeight;
         const analysisTop = analysisSection.offsetTop;
         const analysisCenter = analysisTop + analysisSection.offsetHeight * 0.5;
+        const analysisBottom = analysisSection.offsetTop + analysisSection.offsetHeight;
 
         const scrollY = window.scrollY + window.innerHeight * 0.5;
 
         if (scrollY <= heroBottom) {
-            // In hero section
             scrollProgress = 0;
-        } else if (scrollY >= analysisCenter) {
-            // In analysis section
+            dashProgress = 0;
+        } else if (scrollY >= analysisCenter && scrollY < analysisBottom) {
             scrollProgress = 1;
-        } else {
-            // Transitioning
+            dashProgress = 0;
+        } else if (scrollY < analysisCenter) {
             scrollProgress = (scrollY - heroBottom) / (analysisCenter - heroBottom);
+            dashProgress = 0;
+        } else {
+            // Past analysis section — transition to dashboard background
+            scrollProgress = 1;
+            const transitionRange = window.innerHeight * 0.8;
+            dashProgress = Math.min(1, (scrollY - analysisBottom) / transitionRange);
         }
 
         // Clamp
         scrollProgress = Math.max(0, Math.min(1, scrollProgress));
+        dashProgress = Math.max(0, Math.min(1, dashProgress));
     }
 
     window.addEventListener('scroll', updateScrollProgress, { passive: true });
@@ -491,6 +549,17 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // -------------------------------------------------------------------------
+    // Shortest angle interpolation (for smooth country transitions)
+    // -------------------------------------------------------------------------
+    function lerpAngle(a, b, t) {
+        let diff = b - a;
+        // Normalize to [-PI, PI]
+        while (diff > Math.PI) diff -= Math.PI * 2;
+        while (diff < -Math.PI) diff += Math.PI * 2;
+        return a + diff * t;
+    }
+
+    // -------------------------------------------------------------------------
     // Animation Loop
     // -------------------------------------------------------------------------
     let currentX = heroPos.x;
@@ -500,36 +569,56 @@ document.addEventListener('DOMContentLoaded', function() {
     function animate() {
         requestAnimationFrame(animate);
 
-        // Slow rotation
-        earth.rotation.y += 0.002;
+        // --- Auto rotation ---
+        if (autoRotate) {
+            earth.rotation.y += 0.002;
+        }
 
-        // Smooth scroll-driven positioning
+        // --- Country focus interaction ---
+        if (isCountryFocused && targetRotY !== null) {
+            earth.rotation.y = lerpAngle(earth.rotation.y, targetRotY, 0.04);
+            earth.rotation.x = lerp(earth.rotation.x, targetRotX, 0.04);
+        } else if (!isCountryFocused && targetRotX !== null) {
+            // Smoothly return to default tilt
+            earth.rotation.x = lerp(earth.rotation.x, 0.15, 0.03);
+            if (Math.abs(earth.rotation.x - 0.15) < 0.001) {
+                targetRotX = null;
+            }
+        }
+
+        // --- Scroll-driven positioning ---
         const t = easeInOutCubic(scrollProgress);
-        const targetX = lerp(heroPos.x, analysisPos.x, t);
-        const targetY = lerp(heroPos.y, analysisPos.y, t);
-        const targetScale = lerp(heroPos.scale, analysisPos.scale, t);
+        const dt = easeInOutCubic(dashProgress);
+
+        let finalTargetX, finalTargetY, finalTargetScale;
+
+        if (dashProgress > 0) {
+            // Transition from analysis pos to dashboard background pos
+            finalTargetX = lerp(analysisPos.x, dashPos.x, dt);
+            finalTargetY = lerp(analysisPos.y, dashPos.y, dt);
+            finalTargetScale = lerp(analysisPos.scale, dashPos.scale, dt);
+        } else {
+            // Hero to analysis transition
+            finalTargetX = lerp(heroPos.x, analysisPos.x, t);
+            finalTargetY = lerp(heroPos.y, analysisPos.y, t);
+            finalTargetScale = lerp(heroPos.scale, analysisPos.scale, t);
+        }
+
+        // Apply country zoom override if focused and in dashboard area
+        if (isCountryFocused && targetScale && dashProgress > 0.3) {
+            finalTargetScale = lerp(finalTargetScale, targetScale, 0.5);
+        }
 
         // Smooth interpolation for buttery transitions
-        currentX = lerp(currentX, targetX, 0.08);
-        currentY = lerp(currentY, targetY, 0.08);
-        currentScale = lerp(currentScale, targetScale, 0.08);
+        currentX = lerp(currentX, finalTargetX, 0.08);
+        currentY = lerp(currentY, finalTargetY, 0.08);
+        currentScale = lerp(currentScale, finalTargetScale, 0.08);
 
         earthGroup.position.set(currentX, currentY, 0);
         earthGroup.scale.setScalar(currentScale);
 
-        // Fade Earth opacity based on how far past analysis section
-        const fadeStart = 1.0;
-        if (scrollProgress >= fadeStart) {
-            // Check if we're past the analysis section entirely
-            if (analysisSection) {
-                const analysisBotY = analysisSection.offsetTop + analysisSection.offsetHeight;
-                const pastAnalysis = (window.scrollY - analysisBotY) / (window.innerHeight * 0.5);
-                const fadeAlpha = Math.max(0, 1 - Math.max(0, pastAnalysis));
-                earthGroup.visible = fadeAlpha > 0.01;
-            }
-        } else {
-            earthGroup.visible = true;
-        }
+        // Earth is ALWAYS visible now (persistent background)
+        earthGroup.visible = true;
 
         renderer.render(scene, camera);
     }
@@ -545,19 +634,37 @@ document.addEventListener('DOMContentLoaded', function() {
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-        // Adjust hero position for smaller screens
+        // Adjust earth positions for different screen sizes
         if (window.innerWidth < 1024) {
             heroPos.x = 0;
-            heroPos.y = -0.5;
-            heroPos.scale = 0.8;
+            heroPos.y = -4.5;
+            heroPos.scale = 2.0;
+            analysisPos.x = 0;
+            analysisPos.y = 0;
+            analysisPos.scale = 0.8;
+            dashPos.x = 0;
+            dashPos.y = 0;
+            dashPos.scale = 1.3;
         } else if (window.innerWidth < 1400) {
-            heroPos.x = 2.8;
-            heroPos.y = 0.2;
-            heroPos.scale = 0.9;
+            heroPos.x = 0;
+            heroPos.y = -5.0;
+            heroPos.scale = 2.3;
+            analysisPos.x = 2.8;
+            analysisPos.y = 0.2;
+            analysisPos.scale = 0.9;
+            dashPos.x = 0;
+            dashPos.y = 0;
+            dashPos.scale = 1.5;
         } else {
-            heroPos.x = 3.5;
-            heroPos.y = 0.2;
-            heroPos.scale = 1.0;
+            heroPos.x = 0;
+            heroPos.y = -5.5;
+            heroPos.scale = 2.5;
+            analysisPos.x = 3.5;
+            analysisPos.y = 0.2;
+            analysisPos.scale = 1.0;
+            dashPos.x = 0;
+            dashPos.y = 0;
+            dashPos.scale = 1.6;
         }
     }
 
@@ -566,4 +673,41 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Initial scroll position calculation
     updateScrollProgress();
+
+    // -------------------------------------------------------------------------
+    // Listen for ALL country filter dropdowns globally
+    // -------------------------------------------------------------------------
+    function setupDropdownListeners() {
+        const filterIds = [
+            'exploreTrendFilter',
+            'sectorCountryFilter',
+            'countryIndustryFilter',
+        ];
+
+        filterIds.forEach(function(id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+
+            el.addEventListener('change', function() {
+                const val = this.value;
+                // For country filters: focus the earth
+                if (id === 'exploreTrendFilter' || id === 'sectorCountryFilter') {
+                    window.focusEarthOnCountry(val);
+                }
+                // For industry filter (countryIndustryFilter) — no country to focus
+            });
+        });
+
+        // Also listen for country chip clicks (in analysis section)
+        document.querySelectorAll('.country-chip').forEach(function(chip) {
+            chip.addEventListener('click', function() {
+                const country = this.getAttribute('data-country');
+                if (country) {
+                    window.focusEarthOnCountry(country);
+                }
+            });
+        });
+    }
+
+    setupDropdownListeners();
 });

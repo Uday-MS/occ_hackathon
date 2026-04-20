@@ -1,173 +1,298 @@
-# 🌍 Startup Intelligence Dashboard – Earth Edition
+# 🌍 Startup Intelligence Platform – Full Stack 3D Edition
 
-## 🧠 Project Vision
+## 🧠 PROJECT VISION
 
-This project is evolving into a **high-end, interactive, visually immersive web application** where users explore global startup funding through a **3D Earth-based interface**.
+This project is a **full-stack, AI-powered startup intelligence platform** with a **3D interactive Earth interface**.
 
-Instead of a traditional dashboard, the UI should feel like a **modern space-themed product (Apple / NASA style UI)**.
+The goal is to build a **production-level SaaS product** where users:
+- Explore global startup ecosystems
+- Interact with a real-time 3D globe
+- Analyze country-wise funding
+- Perform advanced search
+- Use AI-based prediction tools
+- Manage personalized accounts
+
+This is NOT a basic dashboard.  
+This is a **premium, interactive analytics product**.
 
 ---
 
-## ⚠️ STRICT RULES
+## ⚠️ STRICT ENGINEERING RULES
 
 - DO NOT rewrite the project from scratch
-- ALWAYS build on existing Flask structure
-- PRESERVE working routes and features
-- DO NOT break backend logic
-- UI can be redesigned fully
-- Keep code modular and clean
+- ALWAYS extend existing Flask structure
+- PRESERVE all working UI and routes
+- DO NOT break existing features
+- Implement changes incrementally
+- Keep backend, frontend, and 3D logic modular
+- Avoid large, uncontrolled changes
 
 ---
 
-## 🎯 CORE EXPERIENCE FLOW
+## 🧱 CURRENT STACK
 
-1. User opens website → sees **loading screen**
-2. A **3D Earth model rotates (high-quality, smooth animation)**
-3. After loading → transitions into main UI
-4. User can:
-   - Click on countries on Earth 🌍
-   - Or select from UI
-5. On click → navigates to **Country Intelligence Page**
+Frontend:
+- HTML, CSS, JavaScript
+- Chart.js
 
----
+Backend:
+- Flask (Python)
 
-## 🎨 UI/UX DESIGN (TOP PRIORITY)
-
-### Theme:
-- Dark theme 🌑
-- Blue + Green glowing accents (space + tech feel)
-- Smooth gradients
-- Glassmorphism cards
-- Soft shadows and neon highlights
+Data:
+- CSV (temporary → will migrate to PostgreSQL)
 
 ---
 
-### Layout Changes:
+## 🚀 TARGET STACK (FINAL)
 
-#### ✅ TOP NAVBAR (instead of sidebar)
-- Logo (StartupIQ 🚀)
-- Pages:
-  - Home
-  - Explore
-  - Countries
-  - India Analysis
-  - Search
+Frontend:
+- HTML, CSS, JS
+- Three.js (3D Earth)
 
----
+Backend:
+- Flask (REST APIs)
+- PostgreSQL (database)
+- psycopg2 / SQLAlchemy
 
-### 🌍 HERO SECTION (MAIN ATTRACTION)
+Auth:
+- Flask-Login
+- Bcrypt
+- Google OAuth
 
-- Large **3D Earth model (center/right)**
-- Slowly rotating
-- Subtle glow effect
-- Stars background (parallax effect)
-
-Left side:
-- Title: “Explore Global Startup Ecosystem”
-- Subtitle
-- CTA button: “Start Exploring”
+ML:
+- Scikit-learn (prediction engine)
 
 ---
 
-## 🌐 INTERACTIVE EARTH FEATURES
+## 🎯 CORE PRODUCT EXPERIENCE
 
-- Earth should rotate continuously
-- Hover effect on countries
-- Click interaction:
-  → Redirect to `/country/<country_name>`
+### 🧭 Landing Flow (UPDATED)
+
+1. First Section:
+   - Half Earth (bottom visible)
+   - Text: Startup exploration content
+   - Dark space theme
+
+2. Scroll Transition:
+   - Smooth zoom-out animation
+
+3. Second Section:
+   - Full 3D Earth (right side)
+   - Text on left
+   - Premium transition
 
 ---
 
-## 📊 COUNTRY PAGE (VERY IMPORTANT)
+## 🧭 NAVBAR STRUCTURE (UPDATED)
 
-When user clicks a country:
+Navbar:
 
-Show:
+- Home
+- India Analysis
+- ML Prediction
+- Search
+
+Right side:
+- Login
+- Get Started (Signup)
+
+REMOVED:
+- Explore
+- Sector
+- Countries
+
+---
+
+## 📜 HOME PAGE STRUCTURE (SCROLL-BASED)
+
+Single-page experience:
+
+1. Hero (Half Earth)
+2. Full Earth Section
+3. Top Startups
+4. Explore Section
+5. Sector Analysis
+6. Country Analysis
+
+All sections scroll-based (no separate pages)
+
+---
+
+## 🌍 3D EARTH SYSTEM (CRITICAL FEATURE)
+
+Use Three.js to implement:
+
+### Behavior:
+
+- Earth rotates continuously by default
+- On selecting a country:
+  → Smooth camera transition
+  → Zoom into selected country
+
+Examples:
+- India → camera focuses on India
+- USA → focus USA
+- Default → slow rotation
+
+### Requirements:
+
+- High-resolution Earth texture
+- Smooth lighting and glow
+- Realistic rotation
+- Maintain performance
+
+---
+
+## 📊 COUNTRY ANALYTICS SYSTEM
+
+When a country is selected:
+
+Display:
 - Total funding
-- Number of startups
-- Top sectors
-- Funding trend chart
-- Top startups list
+- Average funding
+- Top sector
+- Funding trends
+- Top startups
 
 UI:
-- Card-based layout
-- Smooth scroll animations
-- Section reveal animations
+- Glassmorphism cards
+- Smooth transitions
+- Dynamic update (no reload)
 
 ---
 
-## ⚙️ BACKEND (FLASK)
+## 🔐 AUTHENTICATION SYSTEM
 
-- Add dynamic route:
-  `/country/<country_name>`
+Features:
+- Signup (Get Started)
+- Login
+- Logout
+- Google OAuth login
 
-- Use pandas to filter:
-  - Funding per country
-  - Sector distribution
-  - Year trends
-
-- Return JSON or render template
-
----
-
-## 📊 DATA VISUALIZATION
-
-Use Chart.js:
-- Line chart → funding trend
-- Bar chart → sector distribution
-- Pie chart (optional) → sector share
+Requirements:
+- Store users in PostgreSQL
+- Hash passwords using Bcrypt
+- Use Flask-Login for session management
 
 ---
 
-## ✨ ANIMATIONS
+## 🗄️ DATABASE (POSTGRESQL)
 
-- Page load animation
-- Scroll reveal animations
-- Hover effects on cards
-- Smooth transitions between pages
+Goal:
+- Replace CSV with PostgreSQL
 
----
+Tables:
+- users
+- startups
+- user_preferences (optional)
 
-## 🔍 SEARCH FEATURE
-
-- Search startup name
-- Show details dynamically
-- Add live search suggestions
-
----
-
-## 🇮🇳 INDIA ANALYSIS
-
-- Use indian_startups.csv
-- Compare:
-  - India vs Global
-- Show insights visually
+Requirements:
+- Use SQL queries (no pandas for runtime)
+- Optimize queries for filtering
 
 ---
 
-## 🧱 TECH ADDITIONS (OPTIONAL BUT RECOMMENDED)
+## 🔎 ADVANCED SEARCH SYSTEM
 
-- Use Three.js (for 3D Earth)
-- OR use a prebuilt globe library
+Features:
+- Filter by:
+  - Country
+  - Sector
+  - Funding range
+
+API:
+/api/search?country=India&sector=Fintech 
+Requirements:
+- Dynamic query building
+- Fast response
+- Update UI dynamically using fetch()
+
+---
+
+## 🤖 ML PREDICTION SYSTEM
+
+Page: ML Prediction
+
+Input:
+- Country
+- Sector
+- Funding stage
+
+Output:
+- Predicted funding OR success probability
+
+Requirements:
+- Use simple ML model (Linear / Logistic Regression)
+- API: 
+/api/predict
+- Return prediction result dynamically
+
+---
+
+## 📡 API ARCHITECTURE
+
+Standard APIs:
+
+- /api/countries
+- /api/sectors
+- /api/trends
+- /api/country-details
+- /api/search
+- /api/predict
+- /api/auth (login/signup)
+
+---
+
+## 🔄 FRONTEND ↔ BACKEND FLOW
+
+- Use fetch() for API calls
+- Avoid full page reloads
+- Update UI dynamically
+
+---
+
+## 🎨 UI/UX DESIGN RULES
+
+- Dark theme
+- Blue + Green glow accents
+- Glassmorphism UI
+- Smooth animations
+- Clean spacing
+- Premium SaaS look
+
+---
+
+## ✨ ANIMATION SYSTEM
+
+- Scroll-based transitions
+- Earth zoom animations
+- Hover effects
+- Smooth page transitions
 
 ---
 
 ## 🧼 CODE QUALITY
 
-- Clean structure
-- Modular JS
-- No duplicate logic
-- Separate backend & frontend properly
+- Modular code structure
+- Separate concerns:
+  - UI
+  - Backend
+  - 3D logic
+- Avoid duplication
+- Add comments for clarity
 
 ---
 
-## 🚀 FINAL GOAL
+## 🚀 FINAL PRODUCT GOAL
 
-This should feel like:
-👉 A premium SaaS product  
-👉 Not a college project  
-👉 Highly interactive + visually stunning  
+This project should feel like:
 
-Focus:
-- Experience > Features
-- Smoothness > Quantity
+👉 A real startup intelligence SaaS platform  
+👉 Full-stack + AI-powered system  
+👉 Interactive + immersive experience  
+
+Focus on:
+- Performance
+- Interactivity
+- Real backend logic
+- Clean architecture

@@ -36,7 +36,7 @@
                     <span>Start Exploring</span>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
                 </a>
-                <a href="/trends" class="hero-btn hero-btn-ghost" id="ctaTrends">
+                <a href="#exploreSection" class="hero-btn hero-btn-ghost" id="ctaTrends">
                     <span>View Trends</span>
                 </a>
             </div>
@@ -59,11 +59,7 @@
             </div>
         </div>
 
-        <!-- Right: Three.js Earth renders here via fixed canvas -->
-        <div class="hero-earth-wrapper" id="heroEarthAnchor">
-            <!-- This div is the layout anchor; the actual 3D Earth
-                 is rendered on the fixed #earthCanvas behind everything -->
-        </div>
+        <!-- Three.js Earth renders at viewport bottom via fixed canvas -->
     </div>
 
     <!-- Scroll indicator -->
@@ -75,56 +71,62 @@
     </div>
 </section>
 
-<!-- ===== STARTUP ANALYSIS SECTION (Half-Earth from bottom) ===== -->
-<section class="analysis-section" id="analysisSection">
-    <!-- Default content: Planet Earth + country picker -->
-    <div class="analysis-content" id="analysisDefault">
-        <span class="analysis-overline scroll-reveal">STARTUP ANALYSIS</span>
-        <h2 class="analysis-title scroll-reveal">
-            DASH <span class="analysis-highlight">BOARD</span>
-        </h2>
-        <div class="analysis-divider scroll-reveal"></div>
-        <p class="analysis-subtitle scroll-reveal">
-            Discover the world's most promising startups, track funding flows across continents, and uncover the sectors shaping tomorrow's economy. Your journey into global startup intelligence begins here.
-        </p>
-        <a href="#dashboardSection" class="analysis-cta scroll-reveal" id="ctaGetStarted">
-            <span>Get Started</span>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-        </a>
-        <!-- Country Picker Grid -->
-        <div class="country-grid scroll-reveal" id="countryGrid">
-            <button class="country-chip" data-country="USA" onclick="loadCountryDashboard('USA')">
-                <span class="country-chip-flag">🇺🇸</span>
-                <span class="country-chip-name">USA</span>
-            </button>
-            <button class="country-chip" data-country="India" onclick="loadCountryDashboard('India')">
-                <span class="country-chip-flag">🇮🇳</span>
-                <span class="country-chip-name">India</span>
-            </button>
-            <button class="country-chip" data-country="UK" onclick="loadCountryDashboard('UK')">
-                <span class="country-chip-flag">🇬🇧</span>
-                <span class="country-chip-name">UK</span>
-            </button>
-            <button class="country-chip" data-country="Germany" onclick="loadCountryDashboard('Germany')">
-                <span class="country-chip-flag">🇩🇪</span>
-                <span class="country-chip-name">Germany</span>
-            </button>
-            <button class="country-chip" data-country="France" onclick="loadCountryDashboard('France')">
-                <span class="country-chip-flag">🇫🇷</span>
-                <span class="country-chip-name">France</span>
-            </button>
-            <button class="country-chip" data-country="Canada" onclick="loadCountryDashboard('Canada')">
-                <span class="country-chip-flag">🇨🇦</span>
-                <span class="country-chip-name">Canada</span>
-            </button>
-            <button class="country-chip" data-country="Australia" onclick="loadCountryDashboard('Australia')">
-                <span class="country-chip-flag">🇦🇺</span>
-                <span class="country-chip-name">Australia</span>
-            </button>
-            <button class="country-chip" data-country="Netherlands" onclick="loadCountryDashboard('Netherlands')">
-                <span class="country-chip-flag">🇳🇱</span>
-                <span class="country-chip-name">Netherlands</span>
-            </button>
+<!-- ===== SECTION 2: FULL EARTH + TEXT (Split Layout) ===== -->
+<section class="analysis-section analysis-section--split" id="analysisSection">
+    <!-- Split Layout: Text Left, Earth Right -->
+    <div class="analysis-split-layout" id="analysisSplitLayout">
+        <!-- Left: Text content + Country Picker -->
+        <div class="analysis-text-col" id="analysisDefault">
+            <span class="analysis-overline scroll-reveal">STARTUP ANALYSIS</span>
+            <h2 class="analysis-title scroll-reveal">
+                DASH <span class="analysis-highlight">BOARD</span>
+            </h2>
+            <div class="analysis-divider scroll-reveal"></div>
+            <p class="analysis-subtitle scroll-reveal">
+                Discover the world's most promising startups, track funding flows across continents, and uncover the sectors shaping tomorrow's economy. Your journey into global startup intelligence begins here.
+            </p>
+            <a href="#dashboardSection" class="analysis-cta scroll-reveal" id="ctaGetStarted">
+                <span>Get Started</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+            </a>
+            <!-- Country Picker Grid -->
+            <div class="country-grid scroll-reveal" id="countryGrid">
+                <button class="country-chip" data-country="USA" onclick="loadCountryDashboard('USA')">
+                    <span class="country-chip-flag">🇺🇸</span>
+                    <span class="country-chip-name">USA</span>
+                </button>
+                <button class="country-chip" data-country="India" onclick="loadCountryDashboard('India')">
+                    <span class="country-chip-flag">🇮🇳</span>
+                    <span class="country-chip-name">India</span>
+                </button>
+                <button class="country-chip" data-country="UK" onclick="loadCountryDashboard('UK')">
+                    <span class="country-chip-flag">🇬🇧</span>
+                    <span class="country-chip-name">UK</span>
+                </button>
+                <button class="country-chip" data-country="Germany" onclick="loadCountryDashboard('Germany')">
+                    <span class="country-chip-flag">🇩🇪</span>
+                    <span class="country-chip-name">Germany</span>
+                </button>
+                <button class="country-chip" data-country="France" onclick="loadCountryDashboard('France')">
+                    <span class="country-chip-flag">🇫🇷</span>
+                    <span class="country-chip-name">France</span>
+                </button>
+                <button class="country-chip" data-country="Canada" onclick="loadCountryDashboard('Canada')">
+                    <span class="country-chip-flag">🇨🇦</span>
+                    <span class="country-chip-name">Canada</span>
+                </button>
+                <button class="country-chip" data-country="Australia" onclick="loadCountryDashboard('Australia')">
+                    <span class="country-chip-flag">🇦🇺</span>
+                    <span class="country-chip-name">Australia</span>
+                </button>
+                <button class="country-chip" data-country="Netherlands" onclick="loadCountryDashboard('Netherlands')">
+                    <span class="country-chip-flag">🇳🇱</span>
+                    <span class="country-chip-name">Netherlands</span>
+                </button>
+            </div>
+        </div>
+        <!-- Right: Earth anchor (Three.js renders full Earth here) -->
+        <div class="analysis-earth-col" id="analysisEarthAnchor">
         </div>
     </div>
 
@@ -135,7 +137,7 @@
         </div>
     </div>
 
-    <!-- Half-Earth rendered by Three.js below this section -->
+    <!-- Atmospheric glow -->
     <div class="analysis-earth-glow"></div>
 </section>
 
@@ -143,18 +145,18 @@
 
 {% block content %}
 
-<!-- ===== DASHBOARD SECTION ===== -->
-<div id="dashboardSection" class="dashboard-section">
+<!-- ===== 1. TOP STARTUPS SECTION ===== -->
+<div id="dashboardSection" class="dashboard-section home-scroll-section">
 
     <div class="section-header scroll-reveal">
         <h2 class="section-heading">
-            <span class="section-heading-icon">📊</span>
-            Dashboard Overview
+            <span class="section-heading-icon">🏆</span>
+            Top Startups
         </h2>
-        <p class="section-heading-sub">Key metrics from the global startup ecosystem</p>
+        <p class="section-heading-sub">The highest-funded startups across the global ecosystem</p>
     </div>
 
-    <!-- ===== KPI STAT CARDS ===== -->
+    <!-- KPI STAT CARDS -->
     <div class="stats-grid">
         <div class="stat-card blue scroll-reveal">
             <div class="stat-card-header">
@@ -193,9 +195,8 @@
         </div>
     </div>
 
-    <!-- ===== CHARTS ROW ===== -->
+    <!-- CHARTS ROW -->
     <div class="charts-grid">
-        <!-- Funding Trend Mini Chart -->
         <div class="chart-card scroll-reveal">
             <div class="chart-card-header">
                 <div class="chart-card-title"><span>📈</span> Funding Trends</div>
@@ -204,8 +205,6 @@
                 <canvas id="homeTrendChart"></canvas>
             </div>
         </div>
-
-        <!-- Sector Distribution Doughnut -->
         <div class="chart-card scroll-reveal">
             <div class="chart-card-header">
                 <div class="chart-card-title"><span>🏭</span> Sector Distribution</div>
@@ -216,7 +215,7 @@
         </div>
     </div>
 
-    <!-- ===== TOP STARTUPS TABLE ===== -->
+    <!-- TOP STARTUPS TABLE -->
     <div class="table-card scroll-reveal">
         <div class="table-card-header">
             <div class="table-card-title">🏆 Top 10 Startups by Funding</div>
@@ -245,6 +244,98 @@
                 {% endfor %}
             </tbody>
         </table>
+    </div>
+
+</div>
+
+<!-- ===== 2. EXPLORE SECTION ===== -->
+<div id="exploreSection" class="dashboard-section home-scroll-section">
+
+    <div class="section-header scroll-reveal">
+        <h2 class="section-heading">
+            <span class="section-heading-icon">🌍</span>
+            Explore
+        </h2>
+        <p class="section-heading-sub">Interactive global funding map and yearly trends</p>
+    </div>
+
+
+    <!-- Trend Chart Panel -->
+    <div class="chart-card scroll-reveal" style="margin-top: 20px;">
+        <div class="chart-card-header">
+            <div class="chart-card-title"><span>📈</span> Funding Trends by Year</div>
+            <div class="filter-group" style="margin: 0;">
+                <select class="filter-select" id="exploreTrendFilter" style="min-width: 130px;">
+                    <option value="all">All Countries</option>
+                    {% for c in countries %}
+                    <option value="{{ c }}">{{ c }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <div class="chart-container" style="max-height: 420px;">
+            <canvas id="exploreTrendChart"></canvas>
+        </div>
+    </div>
+
+</div>
+
+<!-- ===== 3. SECTOR ANALYSIS SECTION ===== -->
+<div id="sectorSection" class="dashboard-section home-scroll-section">
+
+    <div class="section-header scroll-reveal">
+        <h2 class="section-heading">
+            <span class="section-heading-icon">🏭</span>
+            Sector Analysis
+        </h2>
+        <p class="section-heading-sub">Funding distribution across industry sectors</p>
+    </div>
+
+    <div class="chart-card full-width scroll-reveal">
+        <div class="chart-card-header">
+            <div class="chart-card-title"><span>📊</span> Funding by Industry Sector</div>
+            <div class="filter-group" style="margin: 0;">
+                <select class="filter-select" id="sectorCountryFilter" style="min-width: 130px;">
+                    <option value="all">All Countries</option>
+                    {% for c in countries %}
+                    <option value="{{ c }}">{{ c }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <div class="chart-container" style="min-height: 480px; max-height: 600px;">
+            <canvas id="sectorBarChart"></canvas>
+        </div>
+    </div>
+
+</div>
+
+<!-- ===== 4. COUNTRY ANALYSIS SECTION ===== -->
+<div id="countrySection" class="dashboard-section home-scroll-section">
+
+    <div class="section-header scroll-reveal">
+        <h2 class="section-heading">
+            <span class="section-heading-icon">🗺️</span>
+            Country Analysis
+        </h2>
+        <p class="section-heading-sub">Top countries by total startup funding</p>
+    </div>
+
+    <div class="chart-card full-width scroll-reveal">
+        <div class="chart-card-header">
+            <div class="chart-card-title"><span>🌐</span> Top Countries by Funding</div>
+            <div class="filter-group" style="margin: 0;">
+                <select class="filter-select" id="countryIndustryFilter" style="min-width: 130px;">
+                    <option value="all">All Industries</option>
+                    {% for ind in industries %}
+                    <option value="{{ ind }}">{{ ind }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <div class="chart-container" style="min-height: 440px; max-height: 560px;">
+            <canvas id="countryBarChart"></canvas>
+        </div>
     </div>
 
 </div>
@@ -350,6 +441,198 @@ document.getElementById('ctaGetStarted')?.addEventListener('click', function(e) 
     e.preventDefault();
     document.getElementById('dashboardSection')?.scrollIntoView({ behavior: 'smooth' });
 });
+document.getElementById('ctaTrends')?.addEventListener('click', function(e) {
+    e.preventDefault();
+    document.getElementById('exploreSection')?.scrollIntoView({ behavior: 'smooth' });
+});
+
+// ===== EXPLORE SECTION: Trend Chart + Map =====
+(function() {
+    const ctx = document.getElementById('exploreTrendChart');
+    if (!ctx) return;
+
+    let exploreTrendChart = null;
+
+    function buildExploreTrend(years, funding) {
+        const gradient = ctx.getContext('2d').createLinearGradient(0, 0, 0, 400);
+        gradient.addColorStop(0, 'rgba(52, 211, 153, 0.22)');
+        gradient.addColorStop(1, 'rgba(52, 211, 153, 0.0)');
+
+        if (exploreTrendChart) exploreTrendChart.destroy();
+
+        exploreTrendChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: years,
+                datasets: [{
+                    label: 'Total Funding (USD)',
+                    data: funding,
+                    borderColor: '#34d399',
+                    backgroundColor: gradient,
+                    borderWidth: 2.5,
+                    tension: 0.4,
+                    fill: true,
+                    pointBackgroundColor: '#34d399',
+                    pointBorderColor: '#0a0e1a',
+                    pointBorderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 7,
+                }]
+            },
+            options: getDarkChartOptions('Funding by Year')
+        });
+    }
+
+    buildExploreTrend({{ explore_years | tojson }}, {{ explore_funding | tojson }});
+
+    document.getElementById('exploreTrendFilter')?.addEventListener('change', function() {
+        fetch('/api/trends?country=' + encodeURIComponent(this.value))
+            .then(function(r) { return r.json(); })
+            .then(function(data) { buildExploreTrend(data.years, data.funding); });
+    });
+
+    // Expose for map interaction
+    window._exploreBuildChart = buildExploreTrend;
+})();
+
+
+// ===== SECTOR ANALYSIS: Horizontal Bar Chart =====
+(function() {
+    let sectorChart = null;
+    const barColors = [
+        '#38bdf8', '#a78bfa', '#34d399', '#fb923c',
+        '#f472b6', '#22d3ee', '#facc15', '#818cf8'
+    ];
+
+    function buildSectorChart(labels, values) {
+        const ctx = document.getElementById('sectorBarChart');
+        if (!ctx) return;
+
+        if (sectorChart) sectorChart.destroy();
+
+        sectorChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Funding (USD)',
+                    data: values,
+                    backgroundColor: labels.map(function(_, i) { return barColors[i % barColors.length] + '99'; }),
+                    borderColor: labels.map(function(_, i) { return barColors[i % barColors.length]; }),
+                    borderWidth: 1.5,
+                    borderRadius: 6,
+                    borderSkipped: false,
+                    maxBarThickness: 70,
+                    barPercentage: 0.85,
+                    categoryPercentage: 0.9,
+                }]
+            },
+            options: {
+                ...getDarkChartOptions('Sector Funding'),
+                indexAxis: 'y',
+                interaction: { mode: 'nearest', intersect: true, axis: 'y' },
+                scales: {
+                    y: {
+                        grid: { color: 'rgba(148, 163, 184, 0.06)', drawBorder: false },
+                        ticks: { color: '#94a3b8', font: { family: 'Inter', size: 12, weight: '500' } },
+                        border: { display: false },
+                    },
+                    x: {
+                        grid: { color: 'rgba(148, 163, 184, 0.06)', drawBorder: false },
+                        ticks: {
+                            color: '#64748b',
+                            font: { family: 'Inter', size: 11 },
+                            callback: function(value) { return '$' + formatNumber(value); }
+                        },
+                        border: { display: false },
+                    }
+                }
+            }
+        });
+    }
+
+    buildSectorChart({{ sector_bar_labels | tojson }}, {{ sector_bar_values | tojson }});
+
+    document.getElementById('sectorCountryFilter')?.addEventListener('change', function() {
+        fetch('/api/sectors?country=' + encodeURIComponent(this.value))
+            .then(function(r) { return r.json(); })
+            .then(function(data) { buildSectorChart(data.labels, data.values); });
+    });
+})();
+
+// ===== COUNTRY ANALYSIS: Vertical Bar Chart =====
+(function() {
+    let countryAnalysisChart = null;
+    const barColors = [
+        '#34d399', '#38bdf8', '#a78bfa', '#fb923c',
+        '#f472b6', '#22d3ee', '#facc15', '#818cf8', '#4ade80', '#c084fc'
+    ];
+
+    function buildCountryChart(labels, values) {
+        const ctx = document.getElementById('countryBarChart');
+        if (!ctx) return;
+
+        if (countryAnalysisChart) countryAnalysisChart.destroy();
+
+        countryAnalysisChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Funding (USD)',
+                    data: values,
+                    backgroundColor: barColors.map(function(c) { return c + '99'; }),
+                    borderColor: barColors,
+                    borderWidth: 1.5,
+                    borderRadius: 6,
+                    borderSkipped: false,
+                    maxBarThickness: 80,
+                    barPercentage: 0.75,
+                    categoryPercentage: 0.8,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'point', intersect: true },
+                hover: { mode: 'point', intersect: true },
+                plugins: {
+                    legend: {
+                        labels: { color: '#94a3b8', font: { family: 'Inter', size: 12, weight: '500' }, padding: 16, usePointStyle: true, pointStyleWidth: 10 }
+                    },
+                    tooltip: {
+                        mode: 'point', intersect: true, position: 'barCenter',
+                        backgroundColor: 'rgba(15, 23, 42, 0.95)', titleColor: '#f1f5f9', bodyColor: '#94a3b8',
+                        borderColor: 'rgba(148, 163, 184, 0.15)', borderWidth: 1, padding: 14, cornerRadius: 10,
+                        titleFont: { family: 'Inter', size: 13, weight: '600' }, bodyFont: { family: 'Inter', size: 12 },
+                        displayColors: true, boxPadding: 4,
+                        callbacks: { label: function(ctx) { return ctx.dataset.label + ': $' + formatNumber(ctx.raw); } }
+                    },
+                },
+                scales: {
+                    x: {
+                        grid: { color: 'rgba(148, 163, 184, 0.06)', drawBorder: false },
+                        ticks: { color: '#64748b', font: { family: 'Inter', size: 11 }, maxRotation: 45 },
+                        border: { display: false },
+                    },
+                    y: {
+                        grid: { color: 'rgba(148, 163, 184, 0.06)', drawBorder: false },
+                        ticks: { color: '#64748b', font: { family: 'Inter', size: 11 }, callback: function(value) { return '$' + formatNumber(value); } },
+                        border: { display: false },
+                    }
+                }
+            }
+        });
+    }
+
+    buildCountryChart({{ country_bar_labels | tojson }}, {{ country_bar_values | tojson }});
+
+    document.getElementById('countryIndustryFilter')?.addEventListener('change', function() {
+        fetch('/api/countries?industry=' + encodeURIComponent(this.value))
+            .then(function(r) { return r.json(); })
+            .then(function(data) { buildCountryChart(data.labels, data.values); });
+    });
+})();
 
 // ===== COUNTRY DASHBOARD =====
 
@@ -363,14 +646,14 @@ const countryFlags = {
 let countryChartInstance = null;
 
 function loadCountryDashboard(countryName) {
-    const defaultPanel = document.getElementById('analysisDefault');
+    const splitLayout = document.getElementById('analysisSplitLayout');
     const dashPanel = document.getElementById('countryDashboardPanel');
     const dashContent = document.getElementById('countryDashboard');
 
-    if (!defaultPanel || !dashPanel || !dashContent) return;
+    if (!splitLayout || !dashPanel || !dashContent) return;
 
     // Show loading state
-    defaultPanel.style.display = 'none';
+    splitLayout.style.display = 'none';
     dashPanel.style.display = 'flex';
     dashContent.innerHTML = `
         <div class="country-loading">
@@ -487,7 +770,7 @@ function loadCountryDashboard(countryName) {
 }
 
 function closeCountryDashboard() {
-    const defaultPanel = document.getElementById('analysisDefault');
+    const splitLayout = document.getElementById('analysisSplitLayout');
     const dashPanel = document.getElementById('countryDashboardPanel');
 
     if (countryChartInstance) {
@@ -496,7 +779,7 @@ function closeCountryDashboard() {
     }
 
     if (dashPanel) dashPanel.style.display = 'none';
-    if (defaultPanel) defaultPanel.style.display = 'flex';
+    if (splitLayout) splitLayout.style.display = 'grid';
 
     document.getElementById('analysisSection')?.scrollIntoView({ behavior: 'smooth' });
 }
