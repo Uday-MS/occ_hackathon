@@ -16,7 +16,7 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = SECRET_KEY
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-print("DB URL:", DATABASE_URL)
+
 
 # =============================================================================
 # DATABASE INIT — Create tables on startup
