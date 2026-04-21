@@ -1,10 +1,66 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 import pandas as pd
 import numpy as np
 import joblib
 import os
+from dotenv import load_dotenv
+from functools import wraps
+
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), ".env"))
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+SECRET_KEY = os.getenv("SECRET_KEY")
+
 
 app = Flask(__name__)
+app.config['SECRET_KEY'] = SECRET_KEY
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+print("DB URL:", DATABASE_URL)
+
+# =============================================================================
+# DATABASE INIT — Create tables on startup
+# =============================================================================
+from db import init_db
+init_db()
+
+# =============================================================================
+# AUTH BLUEPRINT — Register auth routes (/signup, /login, /logout, etc.)
+# =============================================================================
+from auth import auth_bp
+app.register_blueprint(auth_bp)
+
+
+# =============================================================================
+# ROUTE PROTECTION — Require login for certain pages
+# =============================================================================
+PROTECTED_ROUTES = {"/india", "/search", "/predict"}
+
+
+@app.before_request
+def check_auth():
+    """Block protected routes for unauthenticated users."""
+    if request.path in PROTECTED_ROUTES and "user_id" not in session:
+        # For AJAX/fetch requests, return JSON
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return jsonify({"error": "Login required", "login_required": True}), 401
+        # For normal page loads, redirect to home with login trigger
+        return redirect("/?login_required=1")
+
+
+# =============================================================================
+# TEMPLATE CONTEXT — Inject user info into all templates
+# =============================================================================
+@app.context_processor
+def inject_user():
+    """Make current user available in all templates."""
+    return {
+        "current_user": {
+            "logged_in": "user_id" in session,
+            "username": session.get("username", ""),
+            "user_id": session.get("user_id"),
+        }
+    }
 
 # =============================================================================
 # DATA LOADING — Global dataset
