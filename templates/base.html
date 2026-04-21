@@ -120,7 +120,16 @@
                     <div class="auth-input-wrapper">
                         <svg class="auth-input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
                         <input class="auth-input" type="password" id="loginPassword" placeholder="••••••••" required autocomplete="current-password">
+                        <button type="button" class="password-toggle-btn" onclick="togglePasswordField('loginPassword', this)" aria-label="Show password">
+                            <svg class="eye-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                        </button>
                     </div>
+                </div>
+                <div class="auth-forgot-link">
+                    <a href="#" id="forgotPasswordLink">Forgot password?</a>
                 </div>
                 <div class="auth-error" id="loginError"></div>
                 <button class="auth-submit-btn" type="submit" id="loginSubmitBtn">
@@ -150,6 +159,12 @@
                     <div class="auth-input-wrapper">
                         <svg class="auth-input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
                         <input class="auth-input" type="password" id="signupPassword" placeholder="Min 6 characters" required autocomplete="new-password" minlength="6">
+                        <button type="button" class="password-toggle-btn" onclick="togglePasswordField('signupPassword', this)" aria-label="Show password">
+                            <svg class="eye-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                        </button>
                     </div>
                 </div>
                 <div class="auth-error" id="signupError"></div>
@@ -174,6 +189,30 @@
                 </svg>
                 <span>Continue with Google</span>
             </button>
+
+            <!-- Forgot Password Form (hidden initially) -->
+            <form class="auth-form" id="forgotPasswordForm" style="display:none;">
+                <div class="forgot-header">
+                    <button type="button" class="forgot-back-btn" id="forgotBackBtn" aria-label="Back to login">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+                    </button>
+                    <span class="forgot-title">Reset Password</span>
+                </div>
+                <p class="forgot-desc">Enter your email address and we'll send you a link to reset your password.</p>
+                <div class="auth-form-group">
+                    <label class="auth-label" for="forgotEmail">Email</label>
+                    <div class="auth-input-wrapper">
+                        <svg class="auth-input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                        <input class="auth-input" type="email" id="forgotEmail" placeholder="you@example.com" required autocomplete="email">
+                    </div>
+                </div>
+                <div class="auth-error" id="forgotError"></div>
+                <div class="auth-success-inline" id="forgotSuccess" style="display:none;"></div>
+                <button class="auth-submit-btn" type="submit" id="forgotSubmitBtn">
+                    <span class="auth-submit-text">Send Reset Link</span>
+                    <span class="auth-submit-loader" style="display:none;"></span>
+                </button>
+            </form>
 
             <!-- Auth success state -->
             <div class="auth-success" id="authSuccess" style="display:none;">
@@ -219,6 +258,7 @@
         })();
 
         // Auto-open login modal if redirected with ?login_required=1
+        // Handle Google Auth errors via ?auth_error=...
         (function() {
             const params = new URLSearchParams(window.location.search);
             if (params.get('login_required') === '1') {
@@ -230,6 +270,31 @@
                         openAuthModal('login');
                     }
                 }, 300);
+            }
+
+            var authError = params.get('auth_error');
+            if (authError) {
+                // Clean the URL
+                window.history.replaceState({}, '', '/');
+                // Show appropriate error message
+                var errorMsg = '';
+                switch (authError) {
+                    case 'google_not_configured':
+                        errorMsg = 'Google Sign-In is not configured. Please use email login or contact the administrator.';
+                        break;
+                    case 'google_failed':
+                        errorMsg = 'Google Sign-In failed. Please try again or use email login.';
+                        break;
+                    default:
+                        errorMsg = 'Authentication error. Please try again.';
+                }
+                setTimeout(function() {
+                    if (typeof _showToast === 'function') {
+                        _showToast(errorMsg, 'error');
+                    } else {
+                        alert(errorMsg);
+                    }
+                }, 500);
             }
         })();
     </script>

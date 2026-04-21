@@ -80,21 +80,39 @@
                     ? '$' + (amount / 1e6).toFixed(2) + 'M'
                     : '$' + amount.toLocaleString();
 
+            const safeName = escapeHtml(s["Startup Name"]);
+            const safeIndustry = escapeHtml(s["Industry"]);
+            const safeCountry = escapeHtml(s["Country"]);
+            const safeStage = escapeHtml(s["Funding Stage"]);
+            const jsName = (s["Startup Name"] || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+            const jsIndustry = (s["Industry"] || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+            const jsCountry = (s["Country"] || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+
             html += `
                 <div class="search-result-card animate-in" style="animation-delay: ${i * 0.05}s">
-                    <div class="result-name">${escapeHtml(s["Startup Name"])}</div>
+                    <div class="result-header" style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">
+                        <div class="result-name">${safeName}</div>
+                        <button class="save-startup-btn"
+                            data-name="${safeName}"
+                            data-industry="${safeIndustry}"
+                            data-country="${safeCountry}"
+                            data-funding="${amount}"
+                            onclick="saveStartup('${jsName}', '${jsIndustry}', '${jsCountry}', ${amount}, this)">
+                            <span class="save-icon">☆</span> Save
+                        </button>
+                    </div>
                     <div class="result-details">
                         <div class="result-detail">
                             <span class="result-detail-label">Industry</span>
-                            <span class="result-detail-value"><span class="badge badge-industry">${escapeHtml(s["Industry"])}</span></span>
+                            <span class="result-detail-value"><span class="badge badge-industry">${safeIndustry}</span></span>
                         </div>
                         <div class="result-detail">
                             <span class="result-detail-label">Country</span>
-                            <span class="result-detail-value"><span class="badge badge-country">${escapeHtml(s["Country"])}</span></span>
+                            <span class="result-detail-value"><span class="badge badge-country">${safeCountry}</span></span>
                         </div>
                         <div class="result-detail">
                             <span class="result-detail-label">Funding Stage</span>
-                            <span class="result-detail-value"><span class="badge badge-stage">${escapeHtml(s["Funding Stage"])}</span></span>
+                            <span class="result-detail-value"><span class="badge badge-stage">${safeStage}</span></span>
                         </div>
                         <div class="result-detail">
                             <span class="result-detail-label">Amount Raised</span>
@@ -106,6 +124,11 @@
         });
         html += '</div>';
         resultsContainer.innerHTML = html;
+
+        // Mark already-saved buttons
+        if (typeof _markSavedButtons === 'function') {
+            setTimeout(_markSavedButtons, 100);
+        }
     }
 
     function escapeHtml(str) {

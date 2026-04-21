@@ -1,6 +1,24 @@
 /* ==========================================================================
-   AUTH.JS — Authentication modal, form handling, and user menu logic
+   AUTH.JS — Authentication modal, form handling, user menu, save startups,
+             recommendations, forgot password, show/hide password
    ========================================================================== */
+
+// =============================================================================
+// PASSWORD TOGGLE — Show/hide password fields
+// =============================================================================
+
+function togglePasswordField(inputId, btn) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    if (input.type === 'password') {
+        input.type = 'text';
+        btn.classList.add('active');
+    } else {
+        input.type = 'password';
+        btn.classList.remove('active');
+    }
+}
+
 
 // =============================================================================
 // AUTH MODAL: Open / Close
@@ -26,6 +44,9 @@ function openAuthModal(tab) {
     // Hide success state, show forms
     const successEl = document.getElementById('authSuccess');
     if (successEl) successEl.style.display = 'none';
+
+    // Hide forgot password form, show main forms
+    _hideForgotForm();
 
     // Show the correct tab
     switchAuthTab(tab || 'login');
@@ -254,12 +275,14 @@ function showAuthSuccess(message, username) {
     const divider = document.querySelector('.auth-divider');
     const googleBtn = document.getElementById('googleAuthBtn');
     const tabs = document.getElementById('authTabs');
+    const forgotForm = document.getElementById('forgotPasswordForm');
 
     if (loginForm) loginForm.style.display = 'none';
     if (signupForm) signupForm.style.display = 'none';
     if (divider) divider.style.display = 'none';
     if (googleBtn) googleBtn.style.display = 'none';
     if (tabs) tabs.style.display = 'none';
+    if (forgotForm) forgotForm.style.display = 'none';
 
     // Show success
     const successEl = document.getElementById('authSuccess');
@@ -278,27 +301,137 @@ function showAuthSuccess(message, username) {
 
 
 // =============================================================================
-// GOOGLE AUTH — Placeholder handler
+// GOOGLE AUTH — Real OAuth redirect
 // =============================================================================
 
 document.addEventListener('DOMContentLoaded', function () {
     const googleBtn = document.getElementById('googleAuthBtn');
     if (googleBtn) {
         googleBtn.addEventListener('click', function () {
-            fetch('/auth/google')
-                .then(function (res) { return res.json(); })
-                .then(function (data) {
-                    // Show message in whichever error element is visible
-                    const loginError = document.getElementById('loginError');
-                    const signupError = document.getElementById('signupError');
-                    const activeError = document.getElementById('loginForm').style.display !== 'none' ? loginError : signupError;
+            // Redirect to Google OAuth login
+            window.location.href = '/auth/google/login';
+        });
+    }
+});
 
-                    if (activeError) {
-                        activeError.textContent = data.message || 'Google auth coming soon!';
-                        activeError.style.display = 'block';
-                        activeError.classList.add('auth-info');
-                    }
-                });
+
+// =============================================================================
+// FORGOT PASSWORD — Show form, submit email, send reset link
+// =============================================================================
+
+function _showForgotForm() {
+    var loginForm = document.getElementById('loginForm');
+    var signupForm = document.getElementById('signupForm');
+    var divider = document.querySelector('.auth-divider');
+    var googleBtn = document.getElementById('googleAuthBtn');
+    var tabs = document.getElementById('authTabs');
+    var forgotForm = document.getElementById('forgotPasswordForm');
+
+    if (loginForm) loginForm.style.display = 'none';
+    if (signupForm) signupForm.style.display = 'none';
+    if (divider) divider.style.display = 'none';
+    if (googleBtn) googleBtn.style.display = 'none';
+    if (tabs) tabs.style.display = 'none';
+    if (forgotForm) forgotForm.style.display = 'flex';
+
+    // Reset forgot form state
+    var forgotError = document.getElementById('forgotError');
+    var forgotSuccess = document.getElementById('forgotSuccess');
+    if (forgotError) { forgotError.textContent = ''; forgotError.style.display = 'none'; }
+    if (forgotSuccess) { forgotSuccess.textContent = ''; forgotSuccess.style.display = 'none'; }
+
+    setTimeout(function () {
+        var emailInput = document.getElementById('forgotEmail');
+        if (emailInput) emailInput.focus();
+    }, 200);
+}
+
+function _hideForgotForm() {
+    var forgotForm = document.getElementById('forgotPasswordForm');
+    var divider = document.querySelector('.auth-divider');
+    var googleBtn = document.getElementById('googleAuthBtn');
+    var tabs = document.getElementById('authTabs');
+
+    if (forgotForm) forgotForm.style.display = 'none';
+    if (divider) divider.style.display = 'flex';
+    if (googleBtn) googleBtn.style.display = 'flex';
+    if (tabs) tabs.style.display = 'flex';
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    // "Forgot password?" link
+    var forgotLink = document.getElementById('forgotPasswordLink');
+    if (forgotLink) {
+        forgotLink.addEventListener('click', function (e) {
+            e.preventDefault();
+            _showForgotForm();
+        });
+    }
+
+    // "Back" button in forgot form
+    var forgotBackBtn = document.getElementById('forgotBackBtn');
+    if (forgotBackBtn) {
+        forgotBackBtn.addEventListener('click', function () {
+            _hideForgotForm();
+            switchAuthTab('login');
+        });
+    }
+
+    // Forgot password form submission
+    var forgotForm = document.getElementById('forgotPasswordForm');
+    if (forgotForm) {
+        forgotForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            var email = document.getElementById('forgotEmail').value.trim();
+            var errorEl = document.getElementById('forgotError');
+            var successEl = document.getElementById('forgotSuccess');
+            var submitBtn = document.getElementById('forgotSubmitBtn');
+            var submitText = submitBtn.querySelector('.auth-submit-text');
+            var submitLoader = submitBtn.querySelector('.auth-submit-loader');
+
+            errorEl.textContent = '';
+            errorEl.style.display = 'none';
+            successEl.textContent = '';
+            successEl.style.display = 'none';
+
+            if (!email || email.indexOf('@') === -1) {
+                errorEl.textContent = 'Please enter a valid email address';
+                errorEl.style.display = 'block';
+                return;
+            }
+
+            submitBtn.disabled = true;
+            submitText.textContent = 'Sending...';
+            submitLoader.style.display = 'inline-block';
+
+            fetch('/forgot-password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: email }),
+            })
+            .then(function (res) { return res.json().then(function (data) { return { status: res.status, data: data }; }); })
+            .then(function (result) {
+                submitBtn.disabled = false;
+                submitText.textContent = 'Send Reset Link';
+                submitLoader.style.display = 'none';
+
+                if (result.data.success) {
+                    successEl.textContent = result.data.message || 'Reset link sent!';
+                    successEl.style.display = 'block';
+                    submitBtn.style.display = 'none';
+                } else {
+                    errorEl.textContent = result.data.error || 'Something went wrong';
+                    errorEl.style.display = 'block';
+                }
+            })
+            .catch(function () {
+                submitBtn.disabled = false;
+                submitText.textContent = 'Send Reset Link';
+                submitLoader.style.display = 'none';
+                errorEl.textContent = 'Network error. Please try again.';
+                errorEl.style.display = 'block';
+            });
         });
     }
 });
@@ -358,4 +491,440 @@ document.addEventListener('DOMContentLoaded', function () {
             openAuthModal('login');
         });
     });
+});
+
+
+// =============================================================================
+// SAVE STARTUP — Global helper functions
+// =============================================================================
+
+/**
+ * Save a startup. Shows login modal if not authenticated.
+ */
+function saveStartup(name, industry, country, funding, buttonEl) {
+    // Check if user is logged in
+    fetch('/auth/status')
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            if (!data.logged_in) {
+                openAuthModal('login');
+                return;
+            }
+
+            // User is logged in — save the startup
+            buttonEl.disabled = true;
+            buttonEl.classList.add('saving');
+
+            fetch('/api/save-startup', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    startup_name: name,
+                    industry: industry || '',
+                    country: country || '',
+                    funding: funding || 0,
+                }),
+            })
+            .then(function (r) { return r.json().then(function (d) { return { status: r.status, data: d }; }); })
+            .then(function (result) {
+                buttonEl.disabled = false;
+                buttonEl.classList.remove('saving');
+
+                if (result.data.success) {
+                    buttonEl.classList.add('saved');
+                    buttonEl.innerHTML = '<span class="save-icon">★</span> Saved';
+                    buttonEl.onclick = function () {
+                        unsaveStartup(name, buttonEl);
+                    };
+                    _showToast('Startup saved!', 'success');
+                } else if (result.status === 409) {
+                    // Already saved
+                    buttonEl.classList.add('saved');
+                    buttonEl.innerHTML = '<span class="save-icon">★</span> Saved';
+                    buttonEl.onclick = function () {
+                        unsaveStartup(name, buttonEl);
+                    };
+                } else if (result.data.login_required) {
+                    openAuthModal('login');
+                } else {
+                    _showToast(result.data.error || 'Failed to save', 'error');
+                }
+            })
+            .catch(function () {
+                buttonEl.disabled = false;
+                buttonEl.classList.remove('saving');
+                _showToast('Network error', 'error');
+            });
+        });
+}
+
+/**
+ * Unsave a startup.
+ */
+function unsaveStartup(name, buttonEl) {
+    buttonEl.disabled = true;
+
+    fetch('/api/unsave-startup', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ startup_name: name }),
+    })
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+        buttonEl.disabled = false;
+        if (data.success) {
+            buttonEl.classList.remove('saved');
+            buttonEl.innerHTML = '<span class="save-icon">☆</span> Save';
+            buttonEl.onclick = function () {
+                saveStartup(name, buttonEl.dataset.industry || '', buttonEl.dataset.country || '', buttonEl.dataset.funding || 0, buttonEl);
+            };
+            _showToast('Startup removed', 'info');
+        }
+    })
+    .catch(function () {
+        buttonEl.disabled = false;
+    });
+}
+
+
+// =============================================================================
+// TOAST NOTIFICATIONS
+// =============================================================================
+
+function _showToast(message, type) {
+    // Remove existing toast
+    var existing = document.querySelector('.toast-notification');
+    if (existing) existing.remove();
+
+    var toast = document.createElement('div');
+    toast.className = 'toast-notification toast-' + (type || 'info');
+    toast.innerHTML = '<span class="toast-icon">' +
+        (type === 'success' ? '✓' : type === 'error' ? '✕' : 'ℹ') +
+        '</span><span class="toast-msg">' + message + '</span>';
+
+    document.body.appendChild(toast);
+
+    // Trigger animation
+    requestAnimationFrame(function () {
+        toast.classList.add('toast-visible');
+    });
+
+    // Auto-remove
+    setTimeout(function () {
+        toast.classList.remove('toast-visible');
+        setTimeout(function () { toast.remove(); }, 400);
+    }, 3000);
+}
+
+
+// =============================================================================
+// SAVED STARTUPS PANEL — Opened from user dropdown
+// =============================================================================
+
+document.addEventListener('DOMContentLoaded', function () {
+    var savedBtn = document.getElementById('navSavedStartups');
+    if (savedBtn) {
+        savedBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+            // Close dropdown
+            var dropdown = document.getElementById('navDropdown');
+            var userBtn = document.getElementById('navUserBtn');
+            if (dropdown) dropdown.classList.remove('open');
+            if (userBtn) userBtn.classList.remove('open');
+
+            _openSavedPanel();
+        });
+    }
+});
+
+function _openSavedPanel() {
+    // Check if panel already exists
+    var existing = document.getElementById('savedStartupsPanel');
+    if (existing) existing.remove();
+
+    var panel = document.createElement('div');
+    panel.id = 'savedStartupsPanel';
+    panel.className = 'saved-panel-overlay';
+    panel.innerHTML = `
+        <div class="saved-panel">
+            <div class="saved-panel-header">
+                <h3 class="saved-panel-title">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+                    Saved Startups
+                </h3>
+                <button class="saved-panel-close" onclick="document.getElementById('savedStartupsPanel').remove()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="saved-panel-body" id="savedPanelBody">
+                <div class="saved-loading">
+                    <div class="country-spinner"></div>
+                    <span>Loading...</span>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(panel);
+
+    // ESC to close
+    panel._escHandler = function (e) {
+        if (e.key === 'Escape') {
+            panel.remove();
+            document.removeEventListener('keydown', panel._escHandler);
+        }
+    };
+    document.addEventListener('keydown', panel._escHandler);
+
+    // Overlay click to close
+    panel.addEventListener('click', function (e) {
+        if (e.target === panel) panel.remove();
+    });
+
+    // Animate in
+    requestAnimationFrame(function () {
+        panel.classList.add('active');
+    });
+
+    // Fetch saved startups
+    fetch('/api/saved-startups')
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            var body = document.getElementById('savedPanelBody');
+            if (!body) return;
+
+            if (!data.startups || data.startups.length === 0) {
+                body.innerHTML = `
+                    <div class="saved-empty">
+                        <div class="saved-empty-icon">📌</div>
+                        <p>No saved startups yet</p>
+                        <span>Save startups from the dashboard or search to see them here.</span>
+                    </div>
+                `;
+                return;
+            }
+
+            var html = '<div class="saved-list">';
+            data.startups.forEach(function (s) {
+                var fundingStr = s.funding >= 1e9
+                    ? '$' + (s.funding / 1e9).toFixed(2) + 'B'
+                    : s.funding >= 1e6
+                        ? '$' + (s.funding / 1e6).toFixed(2) + 'M'
+                        : s.funding > 0
+                            ? '$' + s.funding.toLocaleString()
+                            : '';
+
+                html += `
+                    <div class="saved-item" data-id="${s.id}">
+                        <div class="saved-item-info">
+                            <div class="saved-item-name">${_escHtml(s.startup_name)}</div>
+                            <div class="saved-item-meta">
+                                ${s.industry ? '<span class="badge badge-industry">' + _escHtml(s.industry) + '</span>' : ''}
+                                ${s.country ? '<span class="badge badge-country">' + _escHtml(s.country) + '</span>' : ''}
+                                ${fundingStr ? '<span class="saved-item-funding">' + fundingStr + '</span>' : ''}
+                            </div>
+                        </div>
+                        <button class="saved-item-remove" onclick="_removeSavedItem(${s.id}, '${_escHtml(s.startup_name)}', this)" title="Remove">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="3 6 5 6 21 6"></polyline>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            </svg>
+                        </button>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            body.innerHTML = html;
+        })
+        .catch(function () {
+            var body = document.getElementById('savedPanelBody');
+            if (body) body.innerHTML = '<div class="saved-empty"><p>Failed to load saved startups</p></div>';
+        });
+}
+
+function _removeSavedItem(id, name, btn) {
+    btn.disabled = true;
+    fetch('/api/save-startup/' + id, { method: 'DELETE' })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            if (data.success) {
+                var item = btn.closest('.saved-item');
+                if (item) {
+                    item.style.opacity = '0';
+                    item.style.transform = 'translateX(20px)';
+                    setTimeout(function () { item.remove(); }, 300);
+                }
+                // Also update any save buttons on the page
+                _updateSaveButtonsOnPage(name, false);
+                _showToast('Startup removed', 'info');
+            }
+        });
+}
+
+function _updateSaveButtonsOnPage(name, isSaved) {
+    // Update any save buttons with matching data-name
+    document.querySelectorAll('.save-startup-btn[data-name="' + name + '"]').forEach(function (btn) {
+        if (isSaved) {
+            btn.classList.add('saved');
+            btn.innerHTML = '<span class="save-icon">★</span> Saved';
+        } else {
+            btn.classList.remove('saved');
+            btn.innerHTML = '<span class="save-icon">☆</span> Save';
+        }
+    });
+}
+
+
+// =============================================================================
+// RECOMMENDATIONS — Load on home page if logged in
+// =============================================================================
+
+function loadRecommendations() {
+    var container = document.getElementById('recommendationsContainer');
+    if (!container) return;
+
+    fetch('/api/recommendations')
+        .then(function (r) {
+            if (r.status === 401) {
+                container.style.display = 'none';
+                return null;
+            }
+            return r.json();
+        })
+        .then(function (data) {
+            if (!data) return;
+
+            if (!data.recommendations || data.recommendations.length === 0) {
+                if (data.message) {
+                    container.innerHTML = `
+                        <div class="section-header scroll-reveal">
+                            <h2 class="section-heading">
+                                <span class="section-heading-icon">💡</span>
+                                Recommended for You
+                            </h2>
+                            <p class="section-heading-sub">${data.message}</p>
+                        </div>
+                    `;
+                } else {
+                    container.style.display = 'none';
+                }
+                return;
+            }
+
+            var html = `
+                <div class="section-header scroll-reveal">
+                    <h2 class="section-heading">
+                        <span class="section-heading-icon">💡</span>
+                        Recommended for You
+                    </h2>
+                    <p class="section-heading-sub">Based on your saved startups</p>
+                </div>
+                <div class="recommendations-grid">
+            `;
+
+            data.recommendations.forEach(function (s, i) {
+                var amount = s["Amount Raised (USD)"];
+                var amountStr = amount >= 1e9
+                    ? '$' + (amount / 1e9).toFixed(2) + 'B'
+                    : amount >= 1e6
+                        ? '$' + (amount / 1e6).toFixed(2) + 'M'
+                        : '$' + amount.toLocaleString();
+
+                html += `
+                    <div class="recommendation-card animate-in" style="animation-delay: ${i * 0.05}s">
+                        <div class="rec-card-header">
+                            <div class="rec-card-name">${_escHtml(s["Startup Name"])}</div>
+                            <button class="save-startup-btn"
+                                data-name="${_escHtml(s["Startup Name"])}"
+                                data-industry="${_escHtml(s["Industry"])}"
+                                data-country="${_escHtml(s["Country"])}"
+                                data-funding="${amount}"
+                                onclick="saveStartup('${_escJs(s["Startup Name"])}', '${_escJs(s["Industry"])}', '${_escJs(s["Country"])}', ${amount}, this)">
+                                <span class="save-icon">☆</span> Save
+                            </button>
+                        </div>
+                        <div class="rec-card-meta">
+                            <span class="badge badge-industry">${_escHtml(s["Industry"])}</span>
+                            <span class="badge badge-country">${_escHtml(s["Country"])}</span>
+                            <span class="badge badge-stage">${_escHtml(s["Funding Stage"])}</span>
+                        </div>
+                        <div class="rec-card-funding">${amountStr}</div>
+                    </div>
+                `;
+            });
+
+            html += '</div>';
+            container.innerHTML = html;
+            container.style.display = 'block';
+
+            // Check which ones are already saved
+            _markSavedButtons();
+        })
+        .catch(function () {
+            if (container) container.style.display = 'none';
+        });
+}
+
+/**
+ * Check saved startups and mark matching buttons
+ */
+function _markSavedButtons() {
+    fetch('/api/saved-startups')
+        .then(function (r) {
+            if (r.status === 401) return null;
+            return r.json();
+        })
+        .then(function (data) {
+            if (!data || !data.startups) return;
+
+            var savedNames = new Set(data.startups.map(function (s) { return s.startup_name; }));
+
+            document.querySelectorAll('.save-startup-btn').forEach(function (btn) {
+                var name = btn.dataset.name;
+                if (savedNames.has(name)) {
+                    btn.classList.add('saved');
+                    btn.innerHTML = '<span class="save-icon">★</span> Saved';
+                    btn.onclick = function () { unsaveStartup(name, btn); };
+                }
+            });
+        });
+}
+
+
+// =============================================================================
+// UTILITY FUNCTIONS
+// =============================================================================
+
+function _escHtml(str) {
+    if (!str) return '';
+    var div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+function _escJs(str) {
+    if (!str) return '';
+    return str.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"');
+}
+
+
+// =============================================================================
+// INIT ON PAGE LOAD
+// =============================================================================
+
+document.addEventListener('DOMContentLoaded', function () {
+    // Load recommendations on homepage
+    if (document.getElementById('recommendationsContainer')) {
+        loadRecommendations();
+    }
+
+    // Mark saved buttons on any page (search, index, etc.)
+    setTimeout(function () {
+        if (document.querySelector('.save-startup-btn')) {
+            _markSavedButtons();
+        }
+    }, 500);
 });

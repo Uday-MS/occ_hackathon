@@ -229,6 +229,7 @@
                     <th>Country</th>
                     <th>Stage</th>
                     <th>Funding</th>
+                    <th>Action</th>
                 </tr>
             </thead>
             <tbody>
@@ -240,6 +241,16 @@
                     <td><span class="badge badge-country">{{ s["Country"] }}</span></td>
                     <td><span class="badge badge-stage">{{ s["Funding Stage"] }}</span></td>
                     <td class="amount">${{ "%.2f"|format(s["Amount Raised (USD)"] / 1e6) }}M</td>
+                    <td class="action-cell">
+                        <button class="save-startup-btn"
+                            data-name="{{ s['Startup Name'] }}"
+                            data-industry="{{ s['Industry'] }}"
+                            data-country="{{ s['Country'] }}"
+                            data-funding="{{ s['Amount Raised (USD)'] }}"
+                            onclick="saveStartup('{{ s['Startup Name']|e }}', '{{ s['Industry']|e }}', '{{ s['Country']|e }}', {{ s['Amount Raised (USD)'] }}, this)">
+                            <span class="save-icon">☆</span> Save
+                        </button>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -247,6 +258,13 @@
     </div>
 
 </div>
+
+<!-- ===== RECOMMENDATIONS SECTION (loaded dynamically for logged-in users) ===== -->
+{% if current_user.logged_in %}
+<div id="recommendationsContainer" class="dashboard-section home-scroll-section recommendations-section">
+    <!-- Populated by auth.js loadRecommendations() -->
+</div>
+{% endif %}
 
 <!-- ===== 2. EXPLORE SECTION ===== -->
 <div id="exploreSection" class="dashboard-section home-scroll-section">

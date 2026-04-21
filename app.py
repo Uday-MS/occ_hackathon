@@ -645,6 +645,108 @@ def api_predict():
 
 
 # =============================================================================
+# RECOMMENDATION ENGINE — Pandas-powered recommendations
+# =============================================================================
+
+@app.route("/api/recommendations")
+def api_recommendations():
+    """
+    Recommend startups based on user's saved startups.
+    Gets saved industries/countries from auth module, filters main dataset.
+    Falls back to top startups if no saved preferences exist.
+    """
+    if "user_id" not in session:
+        return jsonify({"error": "Login required", "login_required": True}), 401
+
+    from db import get_conn, put_conn
+
+    user_id = session["user_id"]
+    print(f"Generating recommendations for user: {user_id}")
+
+    conn = get_conn()
+    try:
+        cur = conn.cursor()
+
+        # Get user's saved startup preferences
+        cur.execute(
+            """SELECT DISTINCT industry, country FROM saved_startups
+               WHERE user_id = %s AND (industry IS NOT NULL OR country IS NOT NULL)""",
+            (user_id,),
+        )
+        saved_prefs = cur.fetchall()
+
+        # Get names of already saved startups to exclude them
+        cur.execute(
+            "SELECT startup_name FROM saved_startups WHERE user_id = %s",
+            (user_id,),
+        )
+        saved_names = {row[0] for row in cur.fetchall()}
+        cur.close()
+
+        if not saved_prefs:
+            # Fallback: return top startups as recommendations
+            print(f"No saved preferences for user {user_id} — returning fallback (top startups)")
+            fallback = (
+                df.sort_values("Amount Raised (USD)", ascending=False)
+                .head(12)[["Startup Name", "Industry", "Country", "Funding Stage", "Amount Raised (USD)"]]
+                .to_dict("records")
+            )
+            print(f"Recommendations generated: {len(fallback)} fallback startups")
+            return jsonify({
+                "recommendations": fallback,
+                "message": "Top startups — save some to get personalized recommendations!",
+            })
+
+        industries = {r[0] for r in saved_prefs if r[0]}
+        countries = {r[1] for r in saved_prefs if r[1]}
+        print(f"User preferences — industries: {industries}, countries: {countries}")
+
+        # Filter dataset for matching industry OR country
+        mask = pd.Series([False] * len(df))
+        if industries:
+            mask = mask | df["Industry"].isin(industries)
+        if countries:
+            mask = mask | df["Country"].isin(countries)
+
+        # Exclude already saved startups
+        mask = mask & ~df["Startup Name"].isin(saved_names)
+
+        recommendations = (
+            df[mask]
+            .sort_values("Amount Raised (USD)", ascending=False)
+            .head(12)[["Startup Name", "Industry", "Country", "Funding Stage", "Amount Raised (USD)"]]
+            .to_dict("records")
+        )
+
+        # If personalized results are too few, pad with top startups
+        if len(recommendations) < 4:
+            print(f"Only {len(recommendations)} personalized results — adding fallback top startups")
+            existing_names = {r["Startup Name"] for r in recommendations} | saved_names
+            fallback = (
+                df[~df["Startup Name"].isin(existing_names)]
+                .sort_values("Amount Raised (USD)", ascending=False)
+                .head(12 - len(recommendations))[["Startup Name", "Industry", "Country", "Funding Stage", "Amount Raised (USD)"]]
+                .to_dict("records")
+            )
+            recommendations.extend(fallback)
+
+        print(f"Recommendations generated: {len(recommendations)} startups for user {user_id}")
+        return jsonify({"recommendations": recommendations})
+
+    except Exception as e:
+        print(f"❌ Recommendations error for user {user_id}: {e}")
+        return jsonify({"error": f"Server error: {str(e)}"}), 500
+    finally:
+        put_conn(conn)
+
+
+# =============================================================================
+# ALLOW INSECURE TRANSPORT (dev only — needed for Google OAuth without HTTPS)
+# =============================================================================
+os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
+
+
+# =============================================================================
 # RUN SERVER
 # =============================================================================
 if __name__ == "__main__":

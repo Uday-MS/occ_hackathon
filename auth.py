@@ -1,11 +1,83 @@
 # =============================================================================
 # AUTH MODULE — Authentication routes (Blueprint)
+# Handles: Email auth, Google OAuth, Save Startups, Recommendations,
+#          Forgot Password with email reset
 # =============================================================================
-from flask import Blueprint, request, jsonify, session
+import os
+import secrets
+import smtplib
+from datetime import datetime, timedelta
+from email.message import EmailMessage
+
+from flask import Blueprint, request, jsonify, session, redirect, url_for, render_template
 from werkzeug.security import generate_password_hash, check_password_hash
+from dotenv import load_dotenv
+
 from db import get_conn, put_conn
 
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), ".env"))
+
 auth_bp = Blueprint("auth", __name__)
+
+
+# =============================================================================
+# HELPERS
+# =============================================================================
+
+def _send_reset_email(to_email, token):
+    """Send a password-reset email via SMTP (Gmail)."""
+    print(f"Sending email to: {to_email}")
+
+    email_user = os.getenv("EMAIL_USER", "")
+    email_pass = os.getenv("EMAIL_PASS", "")
+
+    if not email_user or not email_pass:
+        print("⚠️  EMAIL_USER / EMAIL_PASS not set in .env — cannot send email")
+        print("   To enable email sending, set EMAIL_USER and EMAIL_PASS in .env")
+        print("   Using smtp.gmail.com on port 587 with TLS")
+        return False
+
+    reset_link = f"http://localhost:5000/reset-password/{token}"
+
+    msg = EmailMessage()
+    msg["Subject"] = "StartupIQ Password Reset"
+    msg["From"] = email_user
+    msg["To"] = to_email
+    msg.set_content(f"""\
+Hello,
+
+We received a request to reset your password for StartupIQ.
+
+Click the link below to reset your password:
+
+{reset_link}
+
+This link will expire in 15 minutes.
+
+If you did not request this, please ignore this email.
+
+Regards,
+StartupIQ Team
+""")
+
+    try:
+        print(f"Connecting to smtp.gmail.com:587 (TLS) as {email_user}")
+        with smtplib.SMTP("smtp.gmail.com", 587) as server:
+            server.starttls()
+            server.login(email_user, email_pass)
+            server.send_message(msg)
+        print(f"Email sent successfully to: {to_email}")
+        return True
+    except smtplib.SMTPAuthenticationError as e:
+        print(f"❌ Email authentication failed: {e}")
+        print("   Check EMAIL_USER and EMAIL_PASS in .env (use App Password for Gmail)")
+        return False
+    except smtplib.SMTPException as e:
+        print(f"❌ SMTP error sending email: {e}")
+        return False
+    except Exception as e:
+        print(f"❌ Failed to send email: {e}")
+        return False
 
 
 # ---------------------------------------------------------------------------
@@ -92,7 +164,7 @@ def login():
     try:
         cur = conn.cursor()
         cur.execute(
-            "SELECT id, username, password_hash FROM users WHERE email = %s",
+            "SELECT id, username, password_hash, google_id FROM users WHERE email = %s",
             (email,),
         )
         row = cur.fetchone()
@@ -101,7 +173,11 @@ def login():
         if not row:
             return jsonify({"error": "No account found with this email"}), 401
 
-        user_id, username, pw_hash = row
+        user_id, username, pw_hash, google_id = row
+
+        # If user signed up via Google and has no password
+        if google_id and not pw_hash:
+            return jsonify({"error": "This account uses Google sign-in. Please use 'Continue with Google'."}), 401
 
         if not check_password_hash(pw_hash, password):
             return jsonify({"error": "Incorrect password"}), 401
@@ -149,17 +225,190 @@ def auth_status():
     return jsonify({"logged_in": False})
 
 
-# ---------------------------------------------------------------------------
-# GOOGLE AUTH — GET /auth/google (placeholder)
-# ---------------------------------------------------------------------------
-@auth_bp.route("/auth/google")
-def google_auth():
-    """Placeholder for Google OAuth — not yet implemented."""
-    return jsonify({
-        "success": False,
-        "message": "Google authentication is coming soon! This feature is not yet implemented.",
-    }), 501
+# =============================================================================
+# GOOGLE OAUTH — Real Implementation
+# =============================================================================
 
+@auth_bp.route("/auth/google/login")
+def google_login():
+    """Redirect user to Google's OAuth consent screen."""
+    print("Google Auth Started")
+
+    client_id = os.getenv("GOOGLE_CLIENT_ID", "")
+    client_secret = os.getenv("GOOGLE_CLIENT_SECRET", "")
+
+    if not client_id or not client_secret:
+        print("⚠️  Google OAuth not configured — GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET missing in .env")
+        # Redirect back to home with error param (user navigated here via browser)
+        return redirect("/?auth_error=google_not_configured")
+
+    try:
+        from google_auth_oauthlib.flow import Flow
+
+        flow = Flow.from_client_config(
+            {
+                "web": {
+                    "client_id": client_id,
+                    "client_secret": client_secret,
+                    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                    "token_uri": "https://oauth2.googleapis.com/token",
+                    "redirect_uris": ["http://localhost:5000/auth/google/callback"],
+                }
+            },
+            scopes=[
+                "openid",
+                "https://www.googleapis.com/auth/userinfo.email",
+                "https://www.googleapis.com/auth/userinfo.profile",
+            ],
+        )
+        flow.redirect_uri = "http://localhost:5000/auth/google/callback"
+
+        authorization_url, state = flow.authorization_url(
+            access_type="offline",
+            include_granted_scopes="true",
+            prompt="consent",
+        )
+
+        session["google_oauth_state"] = state
+        print("Google Auth: Redirecting to Google consent screen")
+        return redirect(authorization_url)
+
+    except ImportError:
+        print("❌ google-auth-oauthlib not installed. Run: pip install google-auth-oauthlib")
+        return redirect("/?auth_error=google_not_configured")
+    except Exception as e:
+        print(f"❌ Google Auth setup error: {e}")
+        return redirect("/?auth_error=google_failed")
+
+
+@auth_bp.route("/auth/google/callback")
+def google_callback():
+    """Handle Google OAuth callback."""
+    print("Google Auth: Callback received")
+
+    try:
+        import requests as http_requests
+        from google_auth_oauthlib.flow import Flow
+    except ImportError:
+        print("❌ google-auth-oauthlib or requests not installed")
+        return redirect("/?auth_error=google_failed")
+
+    client_id = os.getenv("GOOGLE_CLIENT_ID", "")
+    client_secret = os.getenv("GOOGLE_CLIENT_SECRET", "")
+
+    if not client_id or not client_secret:
+        print("❌ Google Auth callback: credentials missing")
+        return redirect("/?auth_error=google_not_configured")
+
+    try:
+        flow = Flow.from_client_config(
+            {
+                "web": {
+                    "client_id": client_id,
+                    "client_secret": client_secret,
+                    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                    "token_uri": "https://oauth2.googleapis.com/token",
+                    "redirect_uris": ["http://localhost:5000/auth/google/callback"],
+                }
+            },
+            scopes=[
+                "openid",
+                "https://www.googleapis.com/auth/userinfo.email",
+                "https://www.googleapis.com/auth/userinfo.profile",
+            ],
+            state=session.get("google_oauth_state"),
+        )
+        flow.redirect_uri = "http://localhost:5000/auth/google/callback"
+
+        # Exchange the authorization code for tokens
+        flow.fetch_token(authorization_response=request.url)
+
+        # Get user info from Google
+        credentials = flow.credentials
+        userinfo_response = http_requests.get(
+            "https://www.googleapis.com/oauth2/v3/userinfo",
+            headers={"Authorization": f"Bearer {credentials.token}"},
+        )
+        userinfo = userinfo_response.json()
+
+        google_id = userinfo.get("sub")
+        email = userinfo.get("email", "").lower()
+        name = userinfo.get("name", email.split("@")[0])
+
+        if not google_id or not email:
+            print("❌ Google Auth: Missing user info from Google")
+            return redirect("/?auth_error=google_failed")
+
+        print(f"Google Auth: User info received — {email}")
+
+    except Exception as e:
+        print(f"❌ Google Auth token exchange error: {e}")
+        return redirect("/?auth_error=google_failed")
+
+    # Check if user already exists
+    conn = get_conn()
+    try:
+        cur = conn.cursor()
+
+        # First check by google_id
+        cur.execute("SELECT id, username FROM users WHERE google_id = %s", (google_id,))
+        row = cur.fetchone()
+
+        if row:
+            # Existing Google user — log in
+            user_id, username = row
+            print(f"Google Auth: Existing user login — {username} (ID: {user_id})")
+        else:
+            # Check if email already exists (user signed up with email before)
+            cur.execute("SELECT id, username FROM users WHERE email = %s", (email,))
+            row = cur.fetchone()
+
+            if row:
+                # Link Google ID to existing account
+                user_id, username = row
+                cur.execute(
+                    "UPDATE users SET google_id = %s WHERE id = %s",
+                    (google_id, user_id),
+                )
+                print(f"Google Auth: Linked Google ID to existing account — {username} (ID: {user_id})")
+            else:
+                # Create new user (no password for Google users)
+                cur.execute(
+                    "INSERT INTO users (username, email, google_id) VALUES (%s, %s, %s) RETURNING id",
+                    (name, email, google_id),
+                )
+                user_id = cur.fetchone()[0]
+                username = name
+                print(f"Google Auth: New user created — {username} (ID: {user_id})")
+
+        conn.commit()
+        cur.close()
+
+        # Set session
+        session["user_id"] = user_id
+        session["username"] = username
+
+        print("Google Auth Success")
+        return redirect("/")
+
+    except Exception as e:
+        conn.rollback()
+        print(f"❌ Google auth DB error: {e}")
+        return redirect("/?auth_error=google_failed")
+    finally:
+        put_conn(conn)
+
+
+# Keep legacy placeholder route for backward compatibility
+@auth_bp.route("/auth/google")
+def google_auth_legacy():
+    """Redirect to the real Google login flow."""
+    return redirect(url_for("auth.google_login"))
+
+
+# =============================================================================
+# SAVE STARTUP — Full CRUD with industry/country for recommendations
+# =============================================================================
 
 # ---------------------------------------------------------------------------
 # SAVE STARTUP — POST /api/save-startup
@@ -168,7 +417,7 @@ def google_auth():
 def save_startup():
     """Save a startup to the user's collection. Requires login."""
     if "user_id" not in session:
-        return jsonify({"error": "Login required to save startups"}), 401
+        return jsonify({"error": "Login required to save startups", "login_required": True}), 401
 
     data = request.get_json(silent=True)
     if not data:
@@ -178,7 +427,18 @@ def save_startup():
     if not startup_name:
         return jsonify({"error": "Startup name is required"}), 400
 
+    industry = (data.get("industry") or "").strip()
+    country = (data.get("country") or "").strip()
+    funding = data.get("funding", 0)
+
+    # Ensure funding is numeric
+    try:
+        funding = float(funding)
+    except (ValueError, TypeError):
+        funding = 0.0
+
     user_id = session["user_id"]
+    print(f"Saving startup '{startup_name}' for user: {user_id}")
 
     conn = get_conn()
     try:
@@ -191,21 +451,65 @@ def save_startup():
         )
         if cur.fetchone():
             cur.close()
+            print(f"Startup '{startup_name}' already saved for user: {user_id}")
             return jsonify({"error": "Startup already saved"}), 409
 
         cur.execute(
-            "INSERT INTO saved_startups (user_id, startup_name) VALUES (%s, %s) RETURNING id",
-            (user_id, startup_name),
+            """INSERT INTO saved_startups (user_id, startup_name, industry, country, funding)
+               VALUES (%s, %s, %s, %s, %s) RETURNING id""",
+            (user_id, startup_name, industry, country, funding),
         )
         saved_id = cur.fetchone()[0]
         conn.commit()
         cur.close()
 
+        print(f"Startup saved for user: {user_id} — '{startup_name}' (ID: {saved_id})")
         return jsonify({
             "success": True,
             "message": f"'{startup_name}' saved successfully",
             "id": saved_id,
         }), 201
+
+    except Exception as e:
+        conn.rollback()
+        print(f"❌ Save startup error for user {user_id}: {e}")
+        return jsonify({"error": f"Server error: {str(e)}"}), 500
+    finally:
+        put_conn(conn)
+
+
+# ---------------------------------------------------------------------------
+# UNSAVE STARTUP — DELETE /api/unsave-startup
+# ---------------------------------------------------------------------------
+@auth_bp.route("/api/unsave-startup", methods=["DELETE"])
+def unsave_startup():
+    """Remove a saved startup by name. Requires login."""
+    if "user_id" not in session:
+        return jsonify({"error": "Login required"}), 401
+
+    data = request.get_json(silent=True)
+    startup_name = (data.get("startup_name") or "").strip() if data else ""
+
+    if not startup_name:
+        return jsonify({"error": "Startup name is required"}), 400
+
+    user_id = session["user_id"]
+
+    conn = get_conn()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            "DELETE FROM saved_startups WHERE user_id = %s AND startup_name = %s",
+            (user_id, startup_name),
+        )
+        deleted = cur.rowcount
+        conn.commit()
+        cur.close()
+
+        if deleted == 0:
+            return jsonify({"error": "Startup not found in your saved list"}), 404
+
+        return jsonify({"success": True, "message": f"'{startup_name}' removed"})
 
     except Exception as e:
         conn.rollback()
@@ -229,14 +533,22 @@ def get_saved_startups():
     try:
         cur = conn.cursor()
         cur.execute(
-            "SELECT id, startup_name, created_at FROM saved_startups WHERE user_id = %s ORDER BY created_at DESC",
+            """SELECT id, startup_name, industry, country, funding, created_at
+               FROM saved_startups WHERE user_id = %s ORDER BY created_at DESC""",
             (user_id,),
         )
         rows = cur.fetchall()
         cur.close()
 
         startups = [
-            {"id": r[0], "startup_name": r[1], "saved_at": r[2].isoformat() if r[2] else None}
+            {
+                "id": r[0],
+                "startup_name": r[1],
+                "industry": r[2] or "",
+                "country": r[3] or "",
+                "funding": r[4] or 0,
+                "saved_at": r[5].isoformat() if r[5] else None,
+            }
             for r in rows
         ]
 
@@ -253,7 +565,7 @@ def get_saved_startups():
 # ---------------------------------------------------------------------------
 @auth_bp.route("/api/save-startup/<int:startup_id>", methods=["DELETE"])
 def delete_saved_startup(startup_id):
-    """Remove a saved startup. Requires login + ownership."""
+    """Remove a saved startup by ID. Requires login + ownership."""
     if "user_id" not in session:
         return jsonify({"error": "Login required"}), 401
 
@@ -274,6 +586,171 @@ def delete_saved_startup(startup_id):
             return jsonify({"error": "Startup not found or not yours"}), 404
 
         return jsonify({"success": True, "message": "Startup removed"})
+
+    except Exception as e:
+        conn.rollback()
+        return jsonify({"error": f"Server error: {str(e)}"}), 500
+    finally:
+        put_conn(conn)
+
+
+# =============================================================================
+# RECOMMENDATION SYSTEM — Handled by app.py (uses pandas for filtering)
+# The /api/recommendations route is defined in app.py where the DataFrame
+# is available for proper filtering and recommendation generation.
+# =============================================================================
+
+
+# =============================================================================
+# FORGOT PASSWORD — Token-based email reset
+# =============================================================================
+
+# ---------------------------------------------------------------------------
+# POST /forgot-password — Generate token and send email
+# ---------------------------------------------------------------------------
+@auth_bp.route("/forgot-password", methods=["POST"])
+def forgot_password():
+    """Generate a reset token and send email."""
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({"error": "Invalid JSON payload"}), 400
+
+    email = (data.get("email") or "").strip().lower()
+    if not email or "@" not in email:
+        return jsonify({"error": "Valid email is required"}), 400
+
+    conn = get_conn()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT id, google_id, password_hash FROM users WHERE email = %s", (email,))
+        row = cur.fetchone()
+
+        if not row:
+            # Don't reveal whether account exists (security)
+            return jsonify({
+                "success": True,
+                "message": "If an account with that email exists, a reset link has been sent.",
+            })
+
+        user_id, google_id, pw_hash = row
+
+        # If user signed up via Google only
+        if google_id and not pw_hash:
+            return jsonify({
+                "error": "This account uses Google sign-in. Password reset is not available.",
+            }), 400
+
+        # Generate token
+        token = secrets.token_urlsafe(32)
+        expiry = datetime.utcnow() + timedelta(minutes=15)
+
+        cur.execute(
+            "UPDATE users SET reset_token = %s, token_expiry = %s WHERE id = %s",
+            (token, expiry, user_id),
+        )
+        conn.commit()
+        cur.close()
+
+        # Send email
+        email_sent = _send_reset_email(email, token)
+
+        if email_sent:
+            return jsonify({
+                "success": True,
+                "message": "Password reset link has been sent to your email.",
+            })
+        else:
+            # Email sending failed — inform the user clearly
+            email_user = os.getenv("EMAIL_USER", "")
+            if not email_user:
+                return jsonify({
+                    "success": False,
+                    "error": "Email sending is not configured on the server. Please contact the administrator or set EMAIL_USER and EMAIL_PASS in .env.",
+                    "dev_token": token,  # Remove in production
+                }), 503
+            else:
+                return jsonify({
+                    "success": False,
+                    "error": "Failed to send reset email. Please try again later or check server logs.",
+                    "dev_token": token,  # Remove in production
+                }), 500
+
+    except Exception as e:
+        conn.rollback()
+        return jsonify({"error": f"Server error: {str(e)}"}), 500
+    finally:
+        put_conn(conn)
+
+
+# ---------------------------------------------------------------------------
+# GET /reset-password/<token> — Validate token and show reset form
+# ---------------------------------------------------------------------------
+@auth_bp.route("/reset-password/<token>", methods=["GET"])
+def reset_password_form(token):
+    """Validate the reset token and show the reset form."""
+    conn = get_conn()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT id FROM users WHERE reset_token = %s AND token_expiry > %s",
+            (token, datetime.utcnow()),
+        )
+        row = cur.fetchone()
+        cur.close()
+
+        if not row:
+            return render_template("reset_password.html", valid=False, token=token)
+
+        return render_template("reset_password.html", valid=True, token=token)
+
+    except Exception as e:
+        return render_template("reset_password.html", valid=False, token=token)
+    finally:
+        put_conn(conn)
+
+
+# ---------------------------------------------------------------------------
+# POST /reset-password/<token> — Set new password
+# ---------------------------------------------------------------------------
+@auth_bp.route("/reset-password/<token>", methods=["POST"])
+def reset_password_submit(token):
+    """Validate token and update password."""
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({"error": "Invalid JSON payload"}), 400
+
+    password = (data.get("password") or "").strip()
+    if not password or len(password) < 6:
+        return jsonify({"error": "Password must be at least 6 characters"}), 400
+
+    conn = get_conn()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT id FROM users WHERE reset_token = %s AND token_expiry > %s",
+            (token, datetime.utcnow()),
+        )
+        row = cur.fetchone()
+
+        if not row:
+            cur.close()
+            return jsonify({"error": "Invalid or expired reset link"}), 400
+
+        user_id = row[0]
+        pw_hash = generate_password_hash(password, method="pbkdf2:sha256")
+
+        # Update password and clear token
+        cur.execute(
+            "UPDATE users SET password_hash = %s, reset_token = NULL, token_expiry = NULL WHERE id = %s",
+            (pw_hash, user_id),
+        )
+        conn.commit()
+        cur.close()
+
+        return jsonify({
+            "success": True,
+            "message": "Password reset successfully! You can now login.",
+        })
 
     except Exception as e:
         conn.rollback()
