@@ -83,7 +83,7 @@ def get_model():
         if os.path.exists(model_path) and os.path.exists(enc_path):
             _model = joblib.load(model_path)
             _encoders_payload = joblib.load(enc_path)
-            print("✅ ML model loaded successfully")
+            
         else:
             print("⚠️  model.pkl / encoders.pkl not found — run model.py first")
     return _model, _encoders_payload
@@ -743,11 +743,12 @@ def api_recommendations():
 # =============================================================================
 # ALLOW INSECURE TRANSPORT (dev only — needed for Google OAuth without HTTPS)
 # =============================================================================
-os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
+if "RENDER" not in os.environ:
+    os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
 
 
 # =============================================================================
 # RUN SERVER
 # =============================================================================
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=False)

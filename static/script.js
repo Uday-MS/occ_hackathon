@@ -19,7 +19,7 @@ function formatNumber(num) {
 // CHART.JS: Custom tooltip positioner — anchors tooltip at the bar's center-top
 // =============================================================================
 if (typeof Chart !== 'undefined' && Chart.Tooltip) {
-    Chart.Tooltip.positioners.barCenter = function(elements, eventPosition) {
+    Chart.Tooltip.positioners.barCenter = function (elements, eventPosition) {
         if (!elements.length) return false;
         const el = elements[0].element;
         return {
@@ -64,7 +64,7 @@ function getDarkChartOptions(titleText) {
                 displayColors: true,
                 boxPadding: 4,
                 callbacks: {
-                    label: function(ctx) {
+                    label: function (ctx) {
                         const label = ctx.dataset.label || '';
                         return label + ': $' + formatNumber(ctx.raw);
                     }
@@ -92,7 +92,7 @@ function getDarkChartOptions(titleText) {
                 ticks: {
                     color: '#64748b',
                     font: { family: 'Inter', size: 11 },
-                    callback: function(value) {
+                    callback: function (value) {
                         return '$' + formatNumber(value);
                     }
                 },
@@ -106,7 +106,7 @@ function getDarkChartOptions(titleText) {
 // =============================================================================
 // ANIMATED COUNTERS: Animate KPI numbers on page load
 // =============================================================================
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const counters = document.querySelectorAll('[data-counter]');
 
     counters.forEach(el => {
@@ -143,7 +143,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // =============================================================================
 // NAVBAR: Scroll-aware styling
 // =============================================================================
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const navbar = document.getElementById('topNavbar');
     if (!navbar) return;
 
@@ -163,12 +163,12 @@ document.addEventListener('DOMContentLoaded', function() {
 // =============================================================================
 // SCROLL REVEAL: IntersectionObserver for fade-in animations
 // =============================================================================
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const revealElements = document.querySelectorAll('.scroll-reveal');
     if (!revealElements.length) return;
 
-    const observer = new IntersectionObserver(function(entries) {
-        entries.forEach(function(entry) {
+    const observer = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
             if (entry.isIntersecting) {
                 entry.target.classList.add('revealed');
                 observer.unobserve(entry.target);
@@ -179,7 +179,7 @@ document.addEventListener('DOMContentLoaded', function() {
         rootMargin: '0px 0px -40px 0px'
     });
 
-    revealElements.forEach(function(el) {
+    revealElements.forEach(function (el) {
         observer.observe(el);
     });
 });
@@ -188,7 +188,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // =============================================================================
 // PARALLAX: Star field parallax on scroll
 // =============================================================================
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const starfield = document.getElementById('starfield');
     if (!starfield) return;
 
@@ -205,7 +205,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // =============================================================================
 // SCROLL INDICATOR: Fade out on scroll
 // =============================================================================
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const indicator = document.getElementById('scrollIndicator');
     if (!indicator) return;
 
@@ -222,7 +222,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // =============================================================================
 // THREE.JS: 3D Earth — persistent background with country interaction
 // =============================================================================
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     // Only initialize if Three.js and the canvas exist
     if (typeof THREE === 'undefined') return;
     const canvas = document.getElementById('earthCanvas');
@@ -354,13 +354,13 @@ document.addEventListener('DOMContentLoaded', function() {
         if (index >= urls.length) return; // all failed, keep fallback
         textureLoader.load(
             urls[index],
-            function(texture) {
+            function (texture) {
                 texture.colorSpace = THREE.SRGBColorSpace;
                 earthMaterial.map = texture;
                 earthMaterial.needsUpdate = true;
             },
             undefined,
-            function() {
+            function () {
                 tryLoadTexture(urls, index + 1);
             }
         );
@@ -446,14 +446,14 @@ document.addEventListener('DOMContentLoaded', function() {
     // Country Coordinates (longitude in radians for Y-rotation)
     // -------------------------------------------------------------------------
     const countryCoords = {
-        'USA':         { rotY: 1.65,  rotX: 0.15,  label: '🇺🇸 USA' },
-        'India':       { rotY: -1.35, rotX: 0.0,   label: '🇮🇳 India' },
-        'UK':          { rotY: 0.0,   rotX: 0.20,  label: '🇬🇧 UK' },
-        'Germany':     { rotY: -0.17, rotX: 0.18,  label: '🇩🇪 Germany' },
-        'France':      { rotY: -0.04, rotX: 0.15,  label: '🇫🇷 France' },
-        'Canada':      { rotY: 1.55,  rotX: 0.25,  label: '🇨🇦 Canada' },
-        'Australia':   { rotY: -2.35, rotX: -0.20, label: '🇦🇺 Australia' },
-        'Netherlands': { rotY: -0.08, rotX: 0.20,  label: '🇳🇱 Netherlands' },
+        'USA': { rotY: 1.65, rotX: 0.15, label: '🇺🇸 USA' },
+        'India': { rotY: -1.35, rotX: 0.0, label: '🇮🇳 India' },
+        'UK': { rotY: 0.0, rotX: 0.20, label: '🇬🇧 UK' },
+        'Germany': { rotY: -0.17, rotX: 0.18, label: '🇩🇪 Germany' },
+        'France': { rotY: -0.04, rotX: 0.15, label: '🇫🇷 France' },
+        'Canada': { rotY: 1.55, rotX: 0.25, label: '🇨🇦 Canada' },
+        'Australia': { rotY: -2.35, rotX: -0.20, label: '🇦🇺 Australia' },
+        'Netherlands': { rotY: -0.08, rotX: 0.20, label: '🇳🇱 Netherlands' },
     };
 
     // -------------------------------------------------------------------------
@@ -468,7 +468,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const focusedScale = 1.35;
 
     // API: Focus on a country (called from filter dropdowns)
-    window.focusEarthOnCountry = function(countryName) {
+    window.focusEarthOnCountry = function (countryName) {
         if (!countryName || countryName === 'all') {
             // Reset to default
             isCountryFocused = false;
@@ -701,11 +701,11 @@ document.addEventListener('DOMContentLoaded', function() {
             'predictCountry',
         ];
 
-        filterIds.forEach(function(id) {
+        filterIds.forEach(function (id) {
             const el = document.getElementById(id);
             if (!el) return;
 
-            el.addEventListener('change', function() {
+            el.addEventListener('change', function () {
                 const val = this.value;
                 // For country filters: focus the earth
                 if (id === 'exploreTrendFilter' || id === 'sectorCountryFilter' || id === 'predictCountry') {
@@ -716,8 +716,8 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         // Also listen for country chip clicks (in analysis section)
-        document.querySelectorAll('.country-chip').forEach(function(chip) {
-            chip.addEventListener('click', function() {
+        document.querySelectorAll('.country-chip').forEach(function (chip) {
+            chip.addEventListener('click', function () {
                 const country = this.getAttribute('data-country');
                 if (country) {
                     window.focusEarthOnCountry(country);
